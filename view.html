@@ -1,0 +1,1561 @@
+<html>
+
+<head>
+
+<title>ELECTRODYNAMICS2D</title>
+
+<meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
+
+<script type="text/javascript" src="./static/js/glMatrix-0.9.5.min.js"></script>
+<script type="text/javascript" src="./static/js/webgl-utils.js"></script>
+
+<script src="./static/closure-library/closure/goog/base.js"></script>
+
+<script src="./static/protobuf-3.6.1/js/map.js"></script>
+<script src="./static/protobuf-3.6.1/js/message.js"></script>
+<script src="./static/protobuf-3.6.1/js/binary/constants.js"></script>
+<script src="./static/protobuf-3.6.1/js/binary/utils.js"></script>
+<script src="./static/protobuf-3.6.1/js/binary/decoder.js"></script>
+<script src="./static/protobuf-3.6.1/js/binary/reader.js"></script>
+<script src="./static/protobuf-3.6.1/js/binary/encoder.js"></script>
+<script src="./static/protobuf-3.6.1/js/binary/arith.js"></script>
+<script src="./static/protobuf-3.6.1/js/binary/writer.js"></script>
+
+<script
+	src="https://cdn.rawgit.com/dcodeIO/protobuf.js/6.8.8/dist/protobuf.min.js"></script>
+
+<script src="https://code.jquery.com/jquery-3.3.1.min.js"
+	integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
+	crossorigin="anonymous"></script>
+
+<script type="text/javascript" src="./static/js/e2d.js"></script>
+<script type="text/javascript" src="./static/js/toJS.js"></script>
+<script type="application/wasm" src="./static/js/toJS.wasm"></script>
+
+<script id="shader-fs" type="x-shader/x-fragment">
+	precision mediump float;
+	
+	const float PI = 3.1415926535897932384626433832795;
+	const float chargeRadius = 5.0;
+	const float chargeRadius2 = chargeRadius * chargeRadius;
+
+	uniform int uChargesCount;
+	uniform int uCurrentChargeId;
+	uniform vec4 uChargesTraits[50];	
+	uniform vec4 uChargesTraits2[50];
+	
+	uniform sampler2D u_ForcesPaletteTexture;
+	uniform sampler2D u_EqiPotentialPaletteTexture;
+		
+	void main(void)
+	{	    
+		for(int i = 0; i < 256; i++)
+		{
+			if (i >= uChargesCount)
+			{
+				break;
+			}
+		
+			vec2 vdist2 = uChargesTraits[i].xy - gl_FragCoord.xy;
+			float dist2 = dot(vdist2, vdist2);
+			
+			if (dist2 < chargeRadius2)
+			{
+				if (uChargesTraits[i][3] >= 0.0)
+				{
+					gl_FragColor = vec4(abs(uChargesTraits[i][3]/50.0), 0.0, 0.0, 1.0);
+				}
+				else
+				{
+					gl_FragColor = vec4(0.0, 0.0, abs(uChargesTraits[i][3]/50.0), 1.0);
+				}
+				return;
+			}
+			
+			if (i == uCurrentChargeId && dist2 >= chargeRadius2 && dist2 <= 2.0 * chargeRadius2)
+			{
+				gl_FragColor = vec4(1.0, 1.0, 0.0, 1.0);
+				return;
+			}
+			
+		}	
+						
+		float potential = 0.0;
+		float ex = 0.0;
+		float ey = 0.0;
+		float alpha = 0.0;
+		float b = 0.0;
+		
+		for(int i = 0; i < 256; i++)
+		{
+			if (i >= uChargesCount)
+			{
+				break;
+			}
+
+			vec2 vdist2 = uChargesTraits[i].xy - gl_FragCoord.xy;
+			float dist = sqrt(dot(vdist2, vdist2));
+
+			vec2 rad = uChargesTraits[i].xy;			
+			vec2 vel = uChargesTraits2[i].xy;
+			
+			float q = uChargesTraits[i][3];
+			potential += 0.2 * q * log(dist);
+
+			ex += vdist2.x * (uChargesTraits[i][3] / dist);
+			ey += vdist2.y * (uChargesTraits[i][3] / dist);			
+
+			//alpha += uChargesTraits[i][3]  * atan(vdist2.y, vdist2.x);
+
+			b += 1000.0 * q * (vel.x * rad.y - vel.y * rad.x)  / dist;
+		}		
+
+		alpha = atan(ex, ey);
+
+		float clr = cos(5.0 * potential / 25.0);// * cos(5.0 * potential / 25.0);// * cos(5.0 * potential / 25.0) * cos(5.0 * potential / 25.0) * cos(5.0 * potential / 25.0);
+		float clr_conj = sin(25.0 * alpha / 32.0);// * sin(25.0 * alpha / 32.0);// * sin(25.0 * alpha / 32.0) * sin(25.0 * alpha / 32.0) * sin(25.0 * alpha / 32.0);
+		//float clr_b = sin(3.0 * b) * sin(3.0 * b) * sin(3.0 * b) * sin(3.0 * b);
+
+		gl_FragColor = vec4(clr_conj * clr_conj, clr * clr, 0.0, 1.0);
+        //gl_FragColor = vec4(0.0, clr * clr, 0.0, 1.0);
+		//gl_FragColor = vec4(0.0, 0.0, clr_b * clr_b, 1.0);
+        //return;
+
+		// E = Summs ((qi/ri)ni)
+		// B = Summa (qi * ( (vxi, vyi) * (ryi, - rxi)) / (mu * c * r2))
+
+
+		float val = clr_conj * clr_conj; // 0 - 1
+		vec4 color = texture2D(u_ForcesPaletteTexture, vec2(val, 0.5));
+
+		float val1 = clr * clr; // 0 - 1
+		vec4 color1 = texture2D(u_EqiPotentialPaletteTexture, vec2(val1, 0.5));
+	
+		gl_FragColor = mix(color, color1, 0.5);        
+	}
+</script>
+
+<script id="shader-vs" type="x-shader/x-vertex">
+	attribute vec3 aVertexPosition;
+
+	uniform mat4 uMVMatrix;
+	uniform mat4 uPMatrix;
+	
+	void main(void)
+	{
+		gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
+	}
+</script>
+
+<script id="2d-vertex-velocity-arrows-shader" type="x-shader/x-vertex">
+	attribute vec2 a_Position;
+	uniform float angle;
+	uniform vec2 u_translation;
+
+	void main() {
+		vec2 rotatedPosition = vec2(a_Position.x * cos(angle) - a_Position.y * sin(angle),
+									a_Position.x * sin(angle) + a_Position.y * cos(angle));
+	
+		vec2 position = rotatedPosition + u_translation;
+		gl_Position = vec4(position, -0.5, 1.0);
+	}
+</script>
+
+<script id="2d-fragment-velocity-arrows-shader" type="x-shader/x-fragment">
+	precision mediump float;
+	uniform vec4 u_arrowColor;
+	void main(void)
+	{
+		gl_FragColor = u_arrowColor;
+	}
+</script>
+    
+<script type="text/javascript">
+    
+    
+    function gotoPrevForceColormap(){
+        element = document.getElementById('forcesColormaps'); 
+        if (element.selectedIndex > 0){
+            element.selectedIndex = element.selectedIndex - 1;
+            currentValue = element.value;
+            element.dispatchEvent(new CustomEvent("change", {value:currentValue}));
+        }
+    }
+    
+    function gotoNextForceColormap(){
+        element = document.getElementById('forcesColormaps'); 
+        if (element.selectedIndex < element.length - 1){
+            element.selectedIndex = element.selectedIndex + 1;
+            currentValue = element.value;
+            element.dispatchEvent(new CustomEvent("change", {value:currentValue}));
+        }
+    }
+
+    function gotoPrevEqiPotentialColormap(){
+        element = document.getElementById('eqiPotentialColorMaps'); 
+        if (element.selectedIndex > 0){
+            element.selectedIndex = element.selectedIndex - 1;
+            currentValue = element.value;
+            element.dispatchEvent(new CustomEvent("change", {value:currentValue}));
+        }
+    }
+    
+    function gotoNextEqiPotentialColormap(){
+        element = document.getElementById('eqiPotentialColorMaps'); 
+        if (element.selectedIndex < element.length - 1){
+            element.selectedIndex = element.selectedIndex + 1;
+            currentValue = element.value;
+            element.dispatchEvent(new CustomEvent("change", {value:currentValue}));
+        }
+    }    
+    
+	var gl;
+	var canvas;
+	var fpsNode;
+	var nppsNode;
+	var packetIdNode;
+	var fullDroppedPacketsNode;
+	var deltaPacketsTimeNode;
+	var viewportWidth;
+	var viewportHeight;
+	var socket;
+
+	var roomMode = "{{ roomMode }}"; // "view";//
+	var roomIP = "{{ roomIP }}"; //"127.0.0.1";//
+	var roomPort = {{ roomPort }}; //26001;//
+	var webRTCGameId = {{ webRTCGameId }}; // -1
+
+	
+	var paletteTextures = [];
+
+	function initGL(canvas) {
+		try {
+			gl = canvas.getContext("webgl");
+			viewportWidth = canvas.width;
+			viewportHeight = canvas.height;
+			gl.viewportWidth = viewportWidth;
+			gl.viewportHeight = viewportHeight;
+
+			for (var ii = 0; ii < 2; ++ii) {
+				var texture = gl.createTexture();
+				gl.bindTexture(gl.TEXTURE_2D, texture);
+
+				var paletteTextureTexels = new Uint8Array(4 * 1024);
+				gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1024, 1, 0, gl.RGBA,
+						gl.UNSIGNED_BYTE, paletteTextureTexels);
+				gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER,
+						gl.LINEAR);
+				gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER,
+						gl.LINEAR);
+				gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S,
+						gl.CLAMP_TO_EDGE);
+				gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T,
+						gl.CLAMP_TO_EDGE);
+
+				gl.bindTexture(gl.TEXTURE_2D, null);
+
+				// Set the parameters so we can render any size image.
+				//gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+				//gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+				//gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+				//gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+
+				// Upload the image into the texture.
+				//gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, images[ii]);
+
+				// add the texture to the array of textures.
+				paletteTextures.push(texture);
+			}
+		} catch (e) {
+			alert("Could not initialize WebGL");
+		}
+	}
+
+	function getShader(gl, id) {
+		var shaderScript = document.getElementById(id);
+		if (!shaderScript) {
+			return null;
+		}
+
+		var str = "";
+		var k = shaderScript.firstChild;
+		while (k) {
+			if (k.nodeType == 3) {
+				str += k.textContent;
+			}
+			k = k.nextSibling;
+		}
+
+		var shader;
+		if (shaderScript.type == "x-shader/x-fragment") {
+			shader = gl.createShader(gl.FRAGMENT_SHADER);
+		} else if (shaderScript.type == "x-shader/x-vertex") {
+			shader = gl.createShader(gl.VERTEX_SHADER);
+		} else {
+			return null;
+		}
+
+		gl.shaderSource(shader, str);
+		gl.compileShader(shader);
+
+		if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+			alert(gl.getShaderInfoLog(shader));
+			return null;
+		}
+
+		return shader;
+	}
+
+	var shaderProgram;
+
+	function initShaders() {
+		var fragmentShader = getShader(gl, "shader-fs");
+		var vertexShader = getShader(gl, "shader-vs");
+		var arrowShaderVs = getShader(gl, "2d-vertex-velocity-arrows-shader");
+		var arrowShaderFs = getShader(gl, "2d-fragment-velocity-arrows-shader");
+
+		shaderProgram = gl.createProgram();
+		gl.attachShader(shaderProgram, vertexShader);
+		gl.attachShader(shaderProgram, fragmentShader);
+		gl.linkProgram(shaderProgram);
+
+		if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
+			alert("Could not initialize shaders");
+		}
+
+		gl.useProgram(shaderProgram);
+
+		shaderProgram.vertexPositionAttribute = gl.getAttribLocation(
+				shaderProgram, "aVertexPosition");
+		gl.enableVertexAttribArray(shaderProgram.vertexPositionAttribute);
+
+		shaderProgram.pMatrixUniform = gl.getUniformLocation(shaderProgram,
+				"uPMatrix");
+		shaderProgram.mvMatrixUniform = gl.getUniformLocation(shaderProgram,
+				"uMVMatrix");
+		
+		shaderProgram.chargesCount = gl.getUniformLocation(shaderProgram,
+				"uChargesCount");
+		shaderProgram.currentChargeId = gl.getUniformLocation(shaderProgram,
+				"uCurrentChargeId");
+
+		shaderProgram.chargesTraits = gl.getUniformLocation(shaderProgram,
+				"uChargesTraits");
+		shaderProgram.chargesTraits2 = gl.getUniformLocation(shaderProgram,
+				"uChargesTraits2");
+
+		shaderProgram.forcesTextureLocation = gl.getUniformLocation(
+				shaderProgram, "u_ForcesPaletteTexture");
+		shaderProgram.eqiPotintialTextureLocation = gl.getUniformLocation(
+				shaderProgram, "u_EqiPotentialPaletteTexture");
+
+		shaderProgram2 = gl.createProgram();
+		gl.attachShader(shaderProgram2, arrowShaderVs);
+		gl.attachShader(shaderProgram2, arrowShaderFs);		
+		gl.linkProgram(shaderProgram2);
+		gl.useProgram(shaderProgram2);
+		
+		shaderProgram2.arrowPositionAttribute = gl.getAttribLocation(shaderProgram2, "a_Position");
+		shaderProgram2.AngleUniform = gl.getUniformLocation(shaderProgram2, "angle");
+		shaderProgram2.TranslationUniform = gl.getUniformLocation(shaderProgram2, "u_translation");
+		shaderProgram2.ArrowColor = gl.getUniformLocation(shaderProgram2, "u_arrowColor");
+	
+		initArrow(gl);		
+		
+	}
+
+	var startTime;
+	var framesCount = 0;
+	var nppsCount = 0;
+	var fps;
+	var npps;
+	var packetId = 0;
+	var fullDroppedPackets = 1;
+	var deltaPacketsTime;
+	var prevPacketTime;
+	var prevPacketTimeLocal;
+
+	var isInit = false;
+	//const epsilon = 5.0;
+	//const mu = 1.0;
+
+	var previousTime;
+
+	var mvMatrix = mat4.create();
+	var pMatrix = mat4.create();
+
+	var chargesCount;
+	var chargesTraits = [];
+	var chargesTraits2 = [];
+	var chargesTraits3 = []; // fex, fey, fbx, fby	
+	var chargesTraitsTypes = [];
+
+	var mQulon;
+	var mLightVelocity;
+	var mIfMagnetic;
+
+	var useLocalCalculation = false;
+	
+	var positionBuffer;
+
+	function setMatrixUniforms() {
+		gl.uniformMatrix4fv(shaderProgram.pMatrixUniform, false, pMatrix);
+		gl.uniformMatrix4fv(shaderProgram.mvMatrixUniform, false, mvMatrix);
+	}
+
+	var chargesCentersBuffer = [];
+	var gameSocket;
+
+	function initBuffers() {
+		el = gl.createBuffer();
+		gl.bindBuffer(gl.ARRAY_BUFFER, el);
+
+		var vertices = [ 10.0, 10.0, 0.0, -10.0, 10.0, 0.0, 10.0, -10.0, 0.0,
+				-10.0, -10.0, 0.0 ];
+
+		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices),
+				gl.STATIC_DRAW);
+		el.itemSize = 3;
+		el.numItems = 4;
+		el.charge = 0;
+		el.x = 0.0;
+		el.y = 0.0;
+		el.z = 0.0;
+		chargesCentersBuffer.push(el);
+	}
+
+	function initArrow(gl) {
+
+		var vertices = new Float32Array([
+			0.0, 0.0,
+			0.03, 0.0,
+			0.03, 0.01,
+			0.04, 0.0,
+			0.03, -0.01,
+			0.03, 0.0
+		]);
+		
+		positionBuffer = gl.createBuffer();
+		if(!positionBuffer) {
+			console.log('Failed to create the buffer object');
+			return -1;
+		}
+		
+		// bind the buffer object to target
+		gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+		// write data into buffer object
+		gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
+			
+		// connect the assignment to a_Position variable
+		gl.vertexAttribPointer(shaderProgram2.arrowPositionAttribute, 2, gl.FLOAT, false, 0, 0);
+		
+		// enable the assignment to a_Position variable
+		gl.enableVertexAttribArray(shaderProgram2.arrowPositionAttribute);
+	}
+
+	function drawCharges()
+	{	
+		gl.uniform1i(shaderProgram.chargesCount, chargesCount);
+		gl.uniform1i(shaderProgram.currentChargeId, currentChargeIdIndex);
+		gl.uniform4fv(shaderProgram.chargesTraits, chargesTraits);
+		gl.uniform4fv(shaderProgram.chargesTraits2, chargesTraits2);
+
+		gl.uniform1i(shaderProgram.forcesTextureLocation, 0);
+		gl.uniform1i(shaderProgram.eqiPotintialTextureLocation, 1);
+
+		mat4.perspective(90, gl.viewportWidth / gl.viewportHeight, 0.1, 100.0,
+				pMatrix);
+		mat4.identity(mvMatrix);
+
+		mat4.translate(mvMatrix, [ 0.0, 0.0, -5.0 ]); // black stripes are possible
+	
+		for (i = 0; i < chargesCentersBuffer.length; i++) // fake drawing
+		{
+			gl.bindBuffer(gl.ARRAY_BUFFER, chargesCentersBuffer[i]);
+			gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, chargesCentersBuffer[i].itemSize, gl.FLOAT, false, 0, 0);
+			setMatrixUniforms();
+			gl.drawArrays(gl.TRIANGLE_STRIP, 0, chargesCentersBuffer[i].numItems);
+		}		
+	}
+	
+	function drawArrows(selectedIndex, arrowColor, coordArray, arr, startIndex)
+	{
+		if(selectedIndex == 0)
+		{
+			return;	
+		}
+		
+		for (i = 0; i < chargesCount; i++)
+		{
+			if(chargesTraitsTypes[i] == 0)
+			{
+				continue;	
+			}
+
+			if(selectedIndex == 1 && currentChargeIdIndex != i)
+			{
+				continue;
+			}			
+			
+			var x = coordArray[4 * i];
+			var y = coordArray[4 * i + 1];
+			var value_x = arr[4 * i + startIndex];
+			var value_y = arr[4 * i + startIndex + 1];
+			
+			if(value_y == 0 && value_x == 0)
+			{
+				continue;
+			}
+			
+			var angle = Math.atan2(value_y, value_x);
+			var translation = [2 * x / gl.viewportWidth - 1, 2 * y / gl.viewportHeight - 1];
+			gl.uniform1f(shaderProgram2.AngleUniform, angle);
+			gl.uniform2fv(shaderProgram2.TranslationUniform, translation);
+			gl.uniform4fv(shaderProgram2.ArrowColor, arrowColor);
+			gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);	
+			gl.vertexAttribPointer(shaderProgram2.arrowPositionAttribute, 2, gl.FLOAT, false, 0, 0);			
+			gl.drawArrays(gl.LINE_STRIP, 0, 6);
+		}
+	}
+	
+	
+	function drawScene() {	
+		gl.activeTexture(gl.TEXTURE0);
+		gl.bindTexture(gl.TEXTURE_2D, paletteTextures[0]);
+
+		gl.activeTexture(gl.TEXTURE1);
+		gl.bindTexture(gl.TEXTURE_2D, paletteTextures[1]);
+
+		fpsNode.nodeValue = fps;
+		nppsNode.nodeValue = npps;
+		packetIdNode.nodeValue = packetId;
+		fullDroppedPacketsNode.nodeValue = fullDroppedPackets;
+		deltaPacketsTimeNode.nodeValue = deltaPacketsTime;
+
+		currentTime = new Date().getTime();
+		deltaTime = currentTime - prevPacketTime;
+
+		var soundFlag = 0;
+
+		if (useLocalCalculation && deltaTime > 20) {
+			document.getElementById('useLocalLabel').style.color = '#FF0000';
+			var deltaTimeLocal = currentTime - prevPacketTimeLocal;
+			var coords = chargesTraits.slice();
+			var velocities = chargesTraits2.slice();
+			var forces = chargesTraits3.slice();
+			recalculate(deltaTimeLocal / 10.0, chargesCount, coords, velocities, forces);
+			chargesTraits = coords.slice(0);
+			chargesTraits2 = velocities.slice(0);
+			chargesTraits3 = forces.slice(0);			
+			prevPacketTimeLocal = currentTime;
+		}
+
+		// F' = q' * (E/eps + (vy', -vx') * B / (mu *c) )
+		// F = dp / dt
+		// p = mv / sqrt(1 - v*v/c*c);
+		// E = Summs ((qi/ri)ni)
+		// B = Summa (qi * ( (vxi, vyi) * (ryi, - rxi)) / (mu * c * r2))
+
+		gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
+		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+		gl.useProgram(shaderProgram);
+		drawCharges();
+		
+		// draw arrows
+		gl.useProgram(shaderProgram2);
+		// velocity arrows
+		var element = document.getElementById("velocitiesarrows");		
+		drawArrows(element.selectedIndex, [1.0, 0.0, 0.0, 1.0], chargesTraits, chargesTraits2, 0);
+		// electric forces arrows
+		element = document.getElementById("electricarrows");		
+		drawArrows(element.selectedIndex, [0.0, 1.0, 0.0, 1.0], chargesTraits, chargesTraits3, 0);		
+		// magnetic forces arrows
+		element = document.getElementById("magneticarrows");		
+		drawArrows(element.selectedIndex, [0.0, 0.0, 1.0, 1.0], chargesTraits, chargesTraits3, 2);
+		
+		previousTime = currentTime;
+		
+		// showPredictionCB
+		element =  document.getElementById('showPrediction');
+		if(element.selectedIndex > 0)
+		{
+			var deltaTimeLocal = 100;
+			var coords = chargesTraits.slice();
+			var velocities = chargesTraits2.slice();
+			var forces = chargesTraits3.slice();
+			
+			
+			for(var i = 0; i < 10; i++)
+			{
+				recalculate(deltaTimeLocal / 10.0, chargesCount, coords, velocities, forces);
+				// show 
+				drawArrows(element.selectedIndex, [1.0, 1.0, 0.0, 1.0], coords, velocities, 0);
+			}
+		}
+		
+		if (soundFlag == 1) {
+			var audio = new Audio(
+					"148103__barkenov__crystal-frappe-doux-resonnance-fa.wav");
+			//audio.play();
+		}
+	}
+
+	var currentlyPressedKeys = {};
+
+	function handleKeyDown(event) {
+		event.preventDefault();
+		currentlyPressedKeys[event.keyCode] = true;
+	}
+
+	function handleKeyUp(event) {
+		event.preventDefault();		
+		currentlyPressedKeys[event.keyCode] = false;
+	}
+
+	function sendPageUp() {
+		var msg = new proto.ClientWrappedMessage();
+		var kk = new proto.KeyboardKey();
+		kk.setKeyboardkey(0);
+		msg.setKey(kk);
+		var binary = msg.serializeBinary();
+		gameSocket.send(binary);
+	}
+
+	function sendPageDown() {
+		var msg = new proto.ClientWrappedMessage();
+		var kk = new proto.KeyboardKey();
+		kk.setKeyboardkey(1);
+		msg.setKey(kk);
+		var binary = msg.serializeBinary();
+		gameSocket.send(binary);
+	}
+
+	function sendArrowUp() {
+		var msg = new proto.ClientWrappedMessage();
+		var kk = new proto.KeyboardKey();
+		kk.setKeyboardkey(2);
+		msg.setKey(kk);
+		var binary = msg.serializeBinary();
+		gameSocket.send(binary);
+	}
+
+	function sendArrowDown() {
+		var msg = new proto.ClientWrappedMessage();
+		var kk = new proto.KeyboardKey();
+		kk.setKeyboardkey(3);
+		msg.setKey(kk);
+		var binary = msg.serializeBinary();
+		gameSocket.send(binary);
+	}
+
+	function sendQueryGame() {
+		var msg = new proto.ClientWrappedMessage();
+		var kk = new proto.KeyboardKey();
+		kk.setKeyboardkey(4);
+		msg.setKey(kk);
+		var binary = msg.serializeBinary();
+		gameSocket.send(binary);
+	}
+
+	function onNewQulonApply() {
+		var msg = new proto.ClientWrappedMessage();
+		var qulon = new proto.SetQulon();
+		qulon.setQulon(document.getElementById('Qulon').value);
+		msg.setQulon(qulon);
+		var binary = msg.serializeBinary();
+		gameSocket.send(binary);
+	}
+
+	function onNewLightVelocityApply() {
+		var msg = new proto.ClientWrappedMessage();
+		var vel = new proto.SetLightVelocity();
+		vel.setLightvelocity(document.getElementById('C').value);
+		msg.setLightvelocity(vel);
+		var binary = msg.serializeBinary();
+		gameSocket.send(binary);
+	}
+
+	function onNewBCalculatedApply() {
+		var msg = new proto.ClientWrappedMessage();
+		var b = new proto.SetMagneticCalculated();
+		if (document.getElementById('B').checked) {
+			b.setMagneticcalculated(true);
+		} else {
+			b.setMagneticcalculated(false);
+		}
+		msg.setMagneticcalculated(b);
+		var binary = msg.serializeBinary();
+		gameSocket.send(binary);
+	}
+
+	function onChangeUseLocal() {
+		useLocalCalculation = document.getElementById('useLocal').checked;
+	}
+
+	function handleKeys(event) {
+		if (currentlyPressedKeys[33]) // page up
+		{
+			sendPageUp();
+		}
+
+		if (currentlyPressedKeys[38]) // arrow up
+		{
+			sendArrowUp();
+		}
+
+		if (currentlyPressedKeys[34]) // page doen
+		{
+			sendPageDown();
+		}
+
+		if (currentlyPressedKeys[40]) // arrow down
+		{
+			sendArrowDown();
+		}
+	}
+
+	function fillModuleInt8Memory(array) {
+		var count = array.length;
+		var buffer = Module._malloc(count * array.BYTES_PER_ELEMENT);
+		Module.HEAP8.set(array, buffer);
+		return buffer;
+	}
+
+	function fillModuleFloat32Memory(array) {
+		var count = array.length;
+		var buffer = Module._malloc(count * array.BYTES_PER_ELEMENT);
+		Module.HEAPF32.set(array, buffer >> 2);
+		return buffer;
+	}
+	
+	function freeModuleMemory(array) {
+		Module._free(array);
+	}
+
+	function recalculate(deltaTime, count, coords, velocities, forces) {
+		//	void recalculate_test(int count,
+		//		float* x, float* y, float* z,
+		//		float* q,
+		//		float* vx, float* vy, float* vz,
+		//		float* m, char* charge2DType,
+		//		float mQulon, bool mBCalculated, float mC, float deltaTime,
+		//		float mWidth, float mHeight)
+
+		recalc = _recalculate;
+
+		var xArray = new Float32Array(count);
+		var yArray = new Float32Array(count);
+		var zArray = new Float32Array(count);
+		var qArray = new Float32Array(count);
+		var vxArray = new Float32Array(count);
+		var vyArray = new Float32Array(count);
+		var vzArray = new Float32Array(count);
+		var mArray = new Float32Array(count);
+		var typesArray = new Int8Array(count);
+		var fexArray = new Float32Array(count);
+		var feyArray = new Float32Array(count);
+		var fbxArray = new Float32Array(count);		
+		var fbyArray = new Float32Array(count);		
+
+		for (i = 0; i < count; i++) {
+			xArray[i] = coords[4 * i];
+			yArray[i] = coords[4 * i + 1];
+			zArray[i] = coords[4 * i + 2];
+			qArray[i] = coords[4 * i + 3];
+			vxArray[i] = velocities[4 * i];
+			vyArray[i] = velocities[4 * i + 1];
+			vzArray[i] = velocities[4 * i + 2];
+			mArray[i] = velocities[4 * i + 3];
+			typesArray[i] = chargesTraitsTypes[i];
+		}
+
+		var bufferX = fillModuleFloat32Memory(xArray);
+		var bufferY = fillModuleFloat32Memory(yArray);
+		var bufferZ = fillModuleFloat32Memory(zArray);
+		var bufferQ = fillModuleFloat32Memory(qArray);
+		var bufferVX = fillModuleFloat32Memory(vxArray);
+		var bufferVY = fillModuleFloat32Memory(vyArray);
+		var bufferVZ = fillModuleFloat32Memory(vzArray);
+		var bufferM = fillModuleFloat32Memory(mArray);
+		var bufferTypes = fillModuleInt8Memory(typesArray);
+		var bufferFex = fillModuleFloat32Memory(fexArray);
+		var bufferFey = fillModuleFloat32Memory(feyArray);
+		var bufferFbx = fillModuleFloat32Memory(fbxArray);
+		var bufferFby = fillModuleFloat32Memory(fbyArray);
+
+		recalc(count, bufferX, bufferY, bufferZ, bufferQ, bufferVX,
+				bufferVY, bufferVZ, bufferM, bufferTypes,
+				bufferFex, bufferFey, bufferFbx, bufferFby,
+				mQulon, mIfMagnetic,
+				mLightVelocity, deltaTime, geometryWidth, geometryHeight);
+			
+		// coords, velocities, forces
+		for (i = 0; i < count; i++) {
+			coords[4 * i] = Module.HEAPF32[bufferX
+					/ Float32Array.BYTES_PER_ELEMENT + i];
+			coords[4 * i + 1] = Module.HEAPF32[bufferY
+					/ Float32Array.BYTES_PER_ELEMENT + i];
+
+			velocities[4 * i] = Module.HEAPF32[bufferVX
+					/ Float32Array.BYTES_PER_ELEMENT + i];
+			velocities[4 * i + 1] = Module.HEAPF32[bufferVY
+					/ Float32Array.BYTES_PER_ELEMENT + i];
+			
+			forces[4 * i] = Module.HEAPF32[bufferFex
+				/ Float32Array.BYTES_PER_ELEMENT + i];
+			forces[4 * i + 1] = Module.HEAPF32[bufferFey
+				/ Float32Array.BYTES_PER_ELEMENT + i];
+			forces[4 * i + 2] = Module.HEAPF32[bufferFbx
+				/ Float32Array.BYTES_PER_ELEMENT + i];
+			forces[4 * i + 3] = Module.HEAPF32[bufferFby
+				/ Float32Array.BYTES_PER_ELEMENT + i];			
+		}		
+		
+		freeModuleMemory(bufferX);
+		freeModuleMemory(bufferY);
+		freeModuleMemory(bufferZ);
+		freeModuleMemory(bufferQ);
+		freeModuleMemory(bufferVX);
+		freeModuleMemory(bufferVY);
+		freeModuleMemory(bufferVZ);
+		freeModuleMemory(bufferM);
+		freeModuleMemory(bufferTypes);
+		freeModuleMemory(bufferFex);
+		freeModuleMemory(bufferFey);
+		freeModuleMemory(bufferFbx);
+		freeModuleMemory(bufferFby);			
+		
+	}
+
+	function tick() {
+		framesCount += 1;
+
+		var thisTime = new Date().getTime();
+
+		fps = 1000 * framesCount / (thisTime - startTime);
+		npps = 1000 * nppsCount / (thisTime - startTime);
+		requestAnimFrame(tick);
+		handleKeys();
+		drawScene();
+	}
+
+	var geometryWidth;
+	var geometryHeight;
+	var currentChargeId;
+	var currentChargeIdIndex;
+
+	var colorMapsPngFiles = {};
+	var colorMapsXmlFiles = {};
+
+	function play() {
+		document.getElementById('forcesColorMapFiles').addEventListener(
+				'change', fillColormaps, false);
+
+		
+		if (webRTCGameId > -1) {
+			return;
+		}
+		
+		//var gameIp;
+		var gamePort;
+		var gameTicket;
+		var gameAddress;
+
+		var gameInfo;
+
+		// connect to listener
+		//var serverIP = "35.240.93.155";
+		//var serverIP = "127.0.0.1";
+		var serverIP = roomIP;
+
+		var ws = 'ws://';
+		if (location.protocol == 'https') {
+			ws = "wss://";
+		}
+
+		var listenerSocket = new WebSocket(ws + serverIP + ':27000');
+		listenerSocket.binaryType = 'arraybuffer';		
+
+		listenerSocket.onopen = function() {
+			console.log('socket is opened');			
+			// playquery (ip and port) OR viewquery
+			var message = new proto.ClientQueryRequest();
+			if(roomMode == "play")
+			{
+				var playGameRequest = new proto.PlayGameRequest();
+				playGameRequest.setIp(roomIP);
+				playGameRequest.setPort(roomPort);						
+				message.setPlayrequest(playGameRequest);
+			}
+			else
+			{
+				var viewGameRequest = new proto.ViewGameRequest();
+				viewGameRequest.setIp(roomIP);
+				viewGameRequest.setPort(roomPort);						
+				message.setViewrequest(viewGameRequest);				
+			}
+			var binary = message.serializeBinary();
+			listenerSocket.send(binary);
+		};
+
+		listenerSocket.onclose = function(event) {
+			if (event.wasClean) {
+				console.log('Connection is closed properly');
+			} else {
+				console.log('Connection is lost');
+			}
+			console.log('Code: ' + event.code + ' reason: ' + event.reason);
+		};
+
+		listenerSocket.onmessage = function(event) {
+			
+			var message = proto.ListenerToClientWrappedMessage.deserializeBinary(event.data);
+			
+			if (message.hasInvitationtoplay()) {
+				invitation = message.getInvitationtoplay();
+				//var gameIp = invitation.getClientip();
+				var gamePort = invitation.getClientport();
+				var gameTicket = invitation.getTicket();;					
+			}
+			else if (message.hasStates()) {
+				states = message.getStates();
+				gamesList = states.getGamestateList();
+				for (i = 0; i < gamesList.length; i++) {
+					roomPort = gamesList[i].getRoomport();
+					ri = gamesList[i].getRoominfo();
+					gs = ri.getGamestatus();
+					rs = ri.getRoomsize();
+					ws = ri.getWaitingsize();
+					console.log(roomPort, gs, rs, ws );
+				}
+				return;
+			}
+			else if (message.hasInvitationtoview()) {
+				invitation = message.getInvitationtoview();
+				//var gameIp = invitation.getClientip();
+				var gamePort = invitation.getClientport();
+				var gameTicket = invitation.getTicket();;					
+			}
+			else {
+				return;
+			}
+			
+			//listenerSocket.close(); - do not close, listen for games events
+
+			//gameAddress = 'ws://' + gameIp + ':' + gamePort;
+			gameAddress = 'ws://' + roomIP + ':' + gamePort;
+			gameSocket = new WebSocket(gameAddress);
+			gameSocket.binaryType = 'arraybuffer';
+
+			// game socket
+			gameSocket.onopen = function() {
+				console.log("game socket is opened");
+			}
+
+			gameSocket.onclose = function(event) {
+				if (event.wasClean) {
+					console.log('game connection is closed properly');
+				} else {
+					console.log('game connection is lost');
+				}
+				console.log('game close code: ' + event.code + ' reason: '
+						+ event.reason);
+			};
+
+			gameSocket.onmessage = function(event) {
+				var message = proto.RoomWrappedToClientMessage
+						.deserializeBinary(event.data);
+
+				if (message.hasGameinfo()) {
+					gameInfo = message.getGameinfo();
+					var geometry = gameInfo.getGeometry();
+					geometryWidth = geometry.getWidth();
+					geometryHeight = geometry.getHeight();
+					currentChargeId = gameInfo.getCurrentchargeid();
+
+					mQulon = geometry.getQulon();
+					document.getElementById('Qulon').value = mQulon;
+
+					mLightVelocity = geometry.getLightvelocity();
+					document.getElementById('C').value = mLightVelocity;
+
+					mIfMagnetic = geometry.getIfmagnetic();
+					document.getElementById('B').checked = mIfMagnetic;
+					
+					var forcesShowStruct = geometry.getForcesshowstruct();
+					if(forcesShowStruct.getPalettetype() == 0) // discrete
+					{
+						paletteName = forcesShowStruct.getPalettename();
+						element = document.getElementById('forcesColormaps'); 
+						element.value = paletteName;
+						element.dispatchEvent(new CustomEvent("change", {value:paletteName}));
+					}
+					
+					var eqPotentialsShowStruct = geometry.getEqpotentialsshowstruct();
+					if(eqPotentialsShowStruct.getPalettetype() == 0) // discrete
+					{
+						paletteName = eqPotentialsShowStruct.getPalettename();
+						element = document.getElementById('eqiPotentialColorMaps'); 
+						element.value = paletteName;
+						element.dispatchEvent(new Event("change"));						
+					}										
+				} else if (message.hasRoomtoclient()) {
+					document.getElementById('useLocalLabel').style.color = '#00FF00';
+
+					var thisTime = new Date().getTime();
+					deltaPacketsTime = thisTime - prevPacketTime;
+					prevPacketTime = thisTime;
+					prevPacketTimeLocal = thisTime;
+
+					//console.log(deltaPacketsTime);
+
+					nppsCount += 1;
+
+					var roomToClient = message.getRoomtoclient();
+					var chargeInfoList = roomToClient.getChargeinfoList();
+					chargesCount = chargeInfoList.length;
+
+					var oldPacketId = packetId;
+					packetId = roomToClient.getPacketid();
+
+					var droppedPackets = packetId - oldPacketId - 1;
+					if (droppedPackets != 0) {
+						console.log("Dropped " + droppedPackets.toString()
+								+ " packets");
+					}
+
+					fullDroppedPackets += droppedPackets;
+
+					if (!isInit) {
+						if(geometryWidth != undefined && geometryHeight != undefined)
+						{
+							isInit = true;						
+							webGLStart();							
+						}
+						else
+						{
+							sendQueryGame();
+							return;
+						}
+					}
+
+					for (i = 0; i < chargesCount; i++) {
+						var id = chargeInfoList[i].getId();
+
+						if (currentChargeId == id) {
+							currentChargeIdIndex = i;
+						}
+
+						// x
+						chargesTraits[4 * i] = chargeInfoList[i].getX();
+						// y
+						chargesTraits[4 * i + 1] = chargeInfoList[i].getY();
+						// z
+						chargesTraits[4 * i + 2] = 0.0;
+						// q
+						chargesTraits[4 * i + 3] = chargeInfoList[i]
+								.getCharge();
+
+						// vx
+						chargesTraits2[4 * i] = chargeInfoList[i].getVx();
+						// vy
+						chargesTraits2[4 * i + 1] = chargeInfoList[i].getVy();
+						// vz
+						chargesTraits2[4 * i + 2] = 0.0;
+						// m
+						chargesTraits2[4 * i + 3] = chargeInfoList[i].getM();
+
+						// type
+						chargesTraitsTypes[i] = chargeInfoList[i].getType();
+						
+						// fex, fey, fbx, fby
+						chargesTraits3[4 * i]     = chargeInfoList[i].getFex();
+						chargesTraits3[4 * i + 1] = chargeInfoList[i].getFey();						
+						chargesTraits3[4 * i + 2] = chargeInfoList[i].getFbx();						
+						chargesTraits3[4 * i + 3] = chargeInfoList[i].getFby();						
+					}
+				}
+				//console.log("game message " + message.data);
+
+				//var msg = new proto.ClientWrappedMessage();
+				//var ping = new proto.Ping();		
+				//ping.setPing(0);		
+				//msg.setPing(ping);
+				//var binary = msg.serializeBinary();				
+				//gameSocket.send(binary);
+
+			};
+
+			gameSocket.onerror = function(error) {
+				console.log("game error " + error.message);
+			};
+			// end of game socket
+
+		};
+
+		listenerSocket.onerror = function(error) {
+			console.log("Error " + error.message);
+		};
+
+	}
+
+	function webGLStart() {
+		canvas = document.getElementById("Electrodynamics2D-canvas");
+		canvas.left = 100;
+		canvas.top = 100;
+		canvas.width = geometryWidth;
+		canvas.height = geometryHeight;
+			
+		gl = canvas.getContext("webgl");
+		
+		//gl.depthFunc(gl.ALWAYS);
+		
+		viewportWidth = geometryWidth;
+		viewportHeight = geometryHeight;
+		gl.viewportWidth = viewportWidth;
+		gl.viewportHeight = viewportHeight;	
+
+		var fpsTag = document.getElementById("FPS");
+		fpsNode = document.createTextNode("");
+		fpsTag.appendChild(fpsNode);
+
+		var nppsTag = document.getElementById("NPPS");
+		nppsNode = document.createTextNode("");
+		nppsTag.appendChild(nppsNode);
+
+		var packetIdTag = document.getElementById("PacketId");
+		packetIdNode = document.createTextNode("");
+		packetIdTag.appendChild(packetIdNode);
+
+		var fullDroppedPacketsTag = document
+				.getElementById("FullDroppedPackets");
+		fullDroppedPacketsNode = document.createTextNode("");
+		fullDroppedPacketsTag.appendChild(fullDroppedPacketsNode);
+
+		var deltaPacketsTimeTag = document.getElementById("DeltaPacketsTime");
+		deltaPacketsTimeNode = document.createTextNode("");
+		deltaPacketsTimeTag.appendChild(deltaPacketsTimeNode);
+
+		initGL(canvas);
+		initShaders();
+		initBuffers();
+
+		gl.clearColor(0.0, 0.0, 0.0, 1.0);
+		gl.enable(gl.DEPTH_TEST);
+
+		document.onkeydown = handleKeyDown;
+		document.onkeyup = handleKeyUp;
+
+		var thisTime = new Date().getTime();
+
+		previousTime = thisTime;
+		startTime = thisTime;
+		prevPacketTime = thisTime;
+
+		tick();
+	}
+
+	function PaletteElement(o, r, g, b) {
+		this.o = 0;
+		this.r = r;
+		this.g = g;
+		this.b = b;
+	}
+
+	function fillColormaps(evt) {
+		var files = evt.target.files;
+		var output = [];
+		var colormaps = [];
+		for (var i = 0, f; f = files[i]; i++) {
+			var fName = f.name.split('.').slice(0, -1).join('.');
+			colormaps.push(fName);
+			colorMapsXmlFiles[fName] = f;
+		}
+
+		for (i = 0; i < colormaps.length; i++) {
+			$('#forcesColormaps').append(
+					'<option CLASS="a">' + colormaps[i] + '</option>');
+			$('#eqiPotentialColorMaps').append(
+					'<option CLASS="a">' + colormaps[i] + '</option>');
+		}
+
+	}
+
+	function fillDefaultColormaps() {
+
+		$
+				.ajax({
+					url : './static/colormaps/colormaps.txt',
+					type : 'POST',
+					dataType : "text"
+				})
+				.done(
+						function(data) {
+							var lines = data.split("\n");
+							var sourceRoot = lines[0].trimRight();
+							var root = sourceRoot[0].toLowerCase()
+									+ sourceRoot.substr(1, sourceRoot.length);
+							var duplicatesCount = 0;
+							for (var i = 1, len = lines.length; i < len; i++) {
+								var fileName = lines[i].trimRight();
+								var index = fileName.indexOf(root);
+								if (index != -1) {
+									var relativePath = fileName.substring(
+											root.length, fileName.length);
+									var shortFileName = relativePath
+											.substring(relativePath
+													.lastIndexOf('\\') + 1);
+									var shortFileNameWOExt = shortFileName
+											.substring(0, shortFileName
+													.indexOf('.'));
+									var fullFileName = '.\\static\\colormaps\\'
+											+ relativePath;
+									if (colorMapsXmlFiles[shortFileNameWOExt] == undefined) {
+										colorMapsXmlFiles[shortFileNameWOExt] = fullFileName;
+									} else {
+										duplicatesCount++;
+										colorMapsXmlFiles[shortFileNameWOExt
+												+ '_' + duplicatesCount] = fullFileName;
+									}
+								} else {
+									d = 1;
+								}
+							}
+
+							var output = [];
+							var colormaps = [];
+
+							for ( var fName in colorMapsXmlFiles) {
+								colormaps.push(fName);
+							}
+
+							for (i = 0; i < colormaps.length; i++) {
+								$('#forcesColormaps').append('<option CLASS="a">' + colormaps[i] + '</option>');
+								$('#eqiPotentialColorMaps').append('<option CLASS="a">' + colormaps[i] + '</option>');
+							}
+						});
+
+	}
+
+	function applyTexture(content, textureIndex) {
+		if (textureIndex == 0) {
+			gl.activeTexture(gl.TEXTURE0);
+		} else {
+			gl.activeTexture(gl.TEXTURE1);
+		}
+
+		gl.bindTexture(gl.TEXTURE_2D, paletteTextures[textureIndex]);
+
+		var currentPalette = {};
+		var paletteTextureTexels = new Uint8Array(4 * 1024);
+
+		if (content != "") {
+			var xmlDoc = $.parseXML(content);
+			var colorMap = $(xmlDoc).find('ColorMap')[0];
+			for (i = 0; i < colorMap.childElementCount; ++i) {
+				if ((colorMap.children[i]).attributes.getNamedItem('x')) {
+					var x = (colorMap.children[i]).attributes['x'].value;
+					var o = (colorMap.children[i]).attributes['o'].value;
+					var r = (colorMap.children[i]).attributes['r'].value;
+					var g = (colorMap.children[i]).attributes['g'].value;
+					var b = (colorMap.children[i]).attributes['b'].value;
+					currentPalette[x] = new PaletteElement(o, r, g, b);
+				}
+			}
+
+			// currentPalette.size x 1
+			var N = Object.keys(currentPalette).length;
+
+			for (i = 0; i < 1024; i++) {
+				var index = 0;
+
+				for (j = 0; j < N; j++) {
+					var xj = Object.keys(currentPalette)[j];
+					if (xj >= i / 1024) {
+						index = j;
+						break;
+					}
+				}
+
+				var x = Object.keys(currentPalette)[index];
+				var element = currentPalette[x];
+				paletteTextureTexels.set([ 255 * element.r, 255 * element.g,
+						255 * element.b, 255 ], 4 * i);
+			}
+		}
+
+		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1024, 1, 0, gl.RGBA,
+				gl.UNSIGNED_BYTE, paletteTextureTexels);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+
+		gl.bindTexture(gl.TEXTURE_2D, null);
+	}
+
+	function onForcesColorMapChange(selectObj) {
+		var shortName = selectObj.options[selectObj.selectedIndex].value;
+		var fName = colorMapsXmlFiles[shortName];
+
+		$.ajax({
+			url : fName,
+			type : 'POST',
+			dataType : "text"
+		}).done(function(data) {
+			applyTexture(data, 0);
+		});
+	}
+
+	function onEqiPotentialsColorMapChange(selectObj) {
+		var shortName = selectObj.options[selectObj.selectedIndex].value;
+		var fName = colorMapsXmlFiles[shortName];
+
+		$.ajax({
+			url : fName,
+			type : 'POST',
+			dataType : "text"
+		}).done(function(data) {
+			applyTexture(data, 1);
+		});
+	}
+
+	function clearPalletes(selectObj) {
+		var items = $('#forcesColormaps');
+
+		while (items[0].childElementCount > 1) {
+			items[0].remove(1);
+		}
+
+		items = $('#eqiPotentialColorMaps');
+		while (items[0].childElementCount > 1) {
+			items[0].remove(1);
+		}
+	}
+	
+	
+	$(document).ready(function(){
+        $(".slide-up-down").click(function(){
+        	if($(".slide-up-down")[0].attributes["open"] == 1)
+        	{
+            	$(".slide-up-down")[0].attributes["open"] = 0;
+                $(".slide-up-down").addClass('open');            	
+            	$(".controls").slideDown();
+        	}
+        	else
+        	{
+            	$(".slide-up-down")[0].attributes["open"] = 1;      
+                $(".slide-up-down").removeClass('open');            	
+            	$(".controls").slideUp();        		
+        	}
+        });
+    });	
+	
+</script>
+
+<style>
+.controls {
+	border: none;
+}
+
+.flex-row {
+	display: flex;
+	flex-direction: row;
+}
+
+.flex-col {
+	display: flex;
+	flex-direction: column;
+}
+
+.space-between {
+	justify-content: space-between;
+}
+
+.flex-end {
+	justify-content: flex-end;
+}
+
+.controls input, .controls select {
+	margin: 5px;
+	max-width: 110px;
+}
+
+.margin-5 {
+	margin: 5px;
+}
+    
+.slide-up-down {
+	border-radius: 0 0 8px 8px;
+	padding: 5px 10px;
+	font-size: 12px;
+	line-height: 1.5;
+	text-align: center;
+	color: #fff;
+	background-color: #337ab7;
+	border-color: #2e6da4;
+
+}
+.slide-up-down.open {
+	border: 2px solid red;
+}
+.slide-up-down.open .glyphicon-arrow-down:before {
+		content: "+";
+	}
+.glyphicon-arrow-down {
+	position: relative;
+	top: 1px;
+	display: inline-block;
+	font-style: normal;
+	font-weight: 400;
+	line-height: 1;
+}
+.glyphicon-arrow-down:before {
+	content: "-";
+}
+
+input[type="button"] {
+	border-radius: 3px;
+	padding: 5px 10px;
+	font-size: 12px;
+	line-height: 1.5;
+	text-align: center;
+	color: #fff;
+	background-color: #337ab7;
+	border-color: #2e6da4;
+}
+input[type="number"], select{
+	display: block;
+	height: 34px;
+	padding: 6px 12px;
+	font-size: 14px;
+	line-height: 1.42857143;
+	color: #555;
+	background-color: #fff;
+	background-image: none;
+	border: 1px solid #ccc;
+	border-radius: 4px;
+	-webkit-box-shadow: inset 0 1px 1px rgba(0,0,0,.075);
+	box-shadow: inset 0 1px 1px rgba(0,0,0,.075);
+	-webkit-transition: border-color ease-in-out .15s,-webkit-box-shadow ease-in-out .15s;
+	-o-transition: border-color ease-in-out .15s,box-shadow ease-in-out .15s;
+	transition: border-color ease-in-out .15s,box-shadow ease-in-out .15s;
+}
+
+</style>
+
+</head>
+
+<body onload="play(), fillDefaultColormaps()">
+  <div class="container flex-col">
+	<div style="display: block; padding: 0px; border: 1px solid black; margin: 0 auto;">
+	 	<div class="slide-wrapper" style="text-align: center; width: 100%;">
+	    	<button type="button" class="slide-up-down" open="1" style="display:inline">Slide Up Down<span class="glyphicon-arrow-down"></span></button>
+	    </div>
+		<div class="controls" style="display:block">
+			<div class="flex-row">
+
+				<input type="file" accept="text/xml" id="forcesColorMapFiles" multiple="">
+
+				<div class="flex-col">
+                    <div class="flex-row">
+                        <button style="display:inline" name="prev-colormap-btn-force" onclick="gotoPrevForceColormap()"><</button>
+				        <select name="selectcolormap" id="forcesColormaps" style="width: 300px" onchange="onForcesColorMapChange(this)"></select>
+                        <button style="display:inline" name="next-colormap-btn-force" onclick="gotoNextForceColormap()">></button>
+                    </div>
+                    <div class="flex-row">
+                        <button style="display:inline" name="prev-colormap-btn-potential" onclick="gotoPrevEqiPotentialColormap()"><</button>                        
+					   <select name="eqiPotentialSelectColorMap" id="eqiPotentialColorMaps" style="width: 300px" onchange="onEqiPotentialsColorMapChange(this)"></select>
+                        <button style="display:inline" name="next-colormap-btn-potential"  onclick="gotoNextEqiPotentialColormap()">></button>
+                    </div>
+				</div>
+
+				<div class="flex-row">
+
+					<input type="button" id="clearPalette" name="clear" onclick="clearPalletes(this)" value="Clear">
+
+					<div>
+						<div class="flex-row flex-end">
+							<div class="margin-5">Qulon:</div>
+							<input type="number" name="Qulon" id="Qulon" step="0.01" /> <input type="button" name="qulonBtn" value="apply" onclick="onNewQulonApply()" />
+						</div>
+						<div class="flex-row flex-end">
+							<div class="margin-5">C:</div>
+							<input type="number" name="C" id="C" step="0.01" /> <input type="button" name="cBtn" value="apply" onclick="onNewLightVelocityApply()" />
+						</div>
+					</div>
+					<div class="flex-row">
+						<div class="margin-5">B:</div>
+						<input type="checkbox" name="B" id="B" onclick="onNewBCalculatedApply()"></input>
+					</div>
+
+					<div>
+						<div class="flex-row space-between">
+							<div class="margin-5">Velocities arrows:</div>
+							<select name="velocitiesarrows" id="velocitiesarrows" style="width: 300px">
+								<option value="none">None</option>
+								<option value="own">Own</option>
+								<option value="all">All</option>								
+							</select>
+						</div>
+						<div class="flex-row space-between">
+							<div class="margin-5">Electric arrows:</div>
+							<select name="electricarrows" id="electricarrows" style="width: 300px">
+								<option value="none">None</option>
+								<option value="own">Own</option>
+								<option value="all">All</option>															
+							</select>							
+						</div>
+						<div class="flex-row space-between">
+							<div class="margin-5">Magnetic arrows:</div>
+							<select name="magneticarrows" id="magneticarrows" style="width: 300px">
+								<option value="none">None</option>
+								<option value="own">Own</option>
+								<option value="all">All</option>															
+							</select>							
+												
+						</div>
+					</div>
+					
+					<div>
+						<div class="flex-row flex-end">
+							<div class="margin-5" id="showPredictionLabel">Show prediction:</div>
+							<select name="showPrediction" id="showPrediction" style="width: 300px">
+								<option value="none">None</option>
+								<option value="own">Own</option>
+								<option value="all">All</option>															
+							</select>							
+						</div>
+						<div class="flex-row">
+							<div class="margin-5" id="useLocalLabel">Use local:</div>						
+							<input type="checkbox" name="useLocal" id="useLocal" onclick="onChangeUseLocal()" />
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<canvas id="Electrodynamics2D-canvas" style="border: 1px solid black; margin: 10px 0;" width="1500" height="800"></canvas>
+	</div>
+	<div id="overlay">
+		<div>
+			FPS: <span id="FPS" style="position: relative; top: 0px; left: 0 px"></span>
+		</div>
+		<div>
+			Network packets per second: <span id="NPPS" style="position: relative; top: 0px; left: 0 px"></span>
+		</div>
+		<div>
+			Packet ID: <span id="PacketId" style="position: relative; top: 0px; left: 0 px"></span>
+		</div>
+		<div>
+			Dropped packets: <span id="FullDroppedPackets" style="position: relative; top: 0px; left: 0 px"></span>
+		</div>
+		<div>
+			Delta packets time: <span id="DeltaPacketsTime" style="position: relative; top: 0px; left: 0 px"></span>
+		</div>
+	</div>
+  </div>
+</body>
+
+</html>

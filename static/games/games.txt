@@ -1,0 +1,7 @@
+D:\GitLabProjects\electodynamics2d_websocket\WebClient\games\ 
+d:\GitLabProjects\electodynamics2d_websocket\WebClient\games\12s_pm_2p.xml 
+d:\GitLabProjects\electodynamics2d_websocket\WebClient\games\14s_cond_2p.xml 
+d:\GitLabProjects\electodynamics2d_websocket\WebClient\games\2s_2p.xml 
+d:\GitLabProjects\electodynamics2d_websocket\WebClient\games\4s_2p.xml 
+d:\GitLabProjects\electodynamics2d_websocket\WebClient\games\5s_2p.xml 
+d:\GitLabProjects\electodynamics2d_websocket\WebClient\games\5s_pm_2p.xml 

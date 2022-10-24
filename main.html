@@ -1,0 +1,959 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+<meta charset="utf-8">
+<title>E2D</title>
+<meta name="generator" content="Google Web Designer 4.2.0.0802">
+<style type="text/css">
+
+.slick-header-column {
+   text-align: center;
+}
+
+body {
+	margin: 0;
+	padding: 0;
+}
+
+.space-between {
+	justify-content: space-between;
+}
+
+.table {
+	width: 100%;
+	height: 100%;
+}
+
+.table tr, td {
+	border: 1px solid black;
+	width: 50%;
+	height: 50%;
+}
+
+.btn {
+	width: 100%;
+	height: 100%;
+}
+
+.form {
+	/*width: 100%;*/
+	/*height: 100%;*/
+	
+}
+
+.flex-row {
+	display: flex;
+	flex-direction: row;
+}
+
+.flex-col {
+	display: flex;
+	flex-direction: column;
+}
+
+.flex-end {
+	justify-content: flex-end;
+}
+
+.columnPort, .columnStatus, .columnRoomSize, .columnWaitingSize {
+	width: 170 px;
+	border: 1px solid black;
+	display: inline-block;
+}
+
+.columnStatus {
+	width: 110px;
+}
+
+.slick-row.active .slick-cell {
+	background-color: beige;
+}
+
+.container {
+	box-sizing: border-box;
+	border: 1px solid red;
+	display: flex;
+	justify-content: space-between;
+}
+
+.left-col, .right-col {
+	border: opx solid black;
+	flex-grow: 1;
+}
+
+.sign-out-btn-id {
+	display: inline-block;
+}
+
+.left-col {
+	flex-basis: 30%;
+}
+
+.right-col {
+	text-align: right;
+}
+
+#firebaseui-auth-container {
+	display: block;
+	text-align: right;
+}
+
+.right-col .firebaseui-container {
+	margin: 0;
+    display: inline-block;
+} 
+
+.topnav {
+	overflow: hidden;
+	background-color: #333;
+}
+
+.topnav a {
+	float: left;
+	color: #f2f2f2;
+	text-align: center;
+	padding: 14px 16px;
+	text-decoration: none;
+	font-size: 17px;
+}
+
+.topnav a:hover {
+	background-color: #ddd;
+	color: black;
+}
+
+.topnav a.active {
+	background-color: #4CAF50;
+	color: white;
+}
+
+.margin-5 {
+	margin: 5px;
+}
+</style>
+
+
+<script src="https://code.jquery.com/jquery-3.3.1.min.js"
+	integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
+	crossorigin="anonymous"></script>
+
+<script src="./static/closure-library/closure/goog/base.js"></script>
+
+<script src="./static/protobuf-3.6.1/js/map.js"></script>
+<script src="./static/protobuf-3.6.1/js/message.js"></script>
+<script src="./static/protobuf-3.6.1/js/binary/constants.js"></script>
+<script src="./static/protobuf-3.6.1/js/binary/utils.js"></script>
+<script src="./static/protobuf-3.6.1/js/binary/decoder.js"></script>
+<script src="./static/protobuf-3.6.1/js/binary/reader.js"></script>
+<script src="./static/protobuf-3.6.1/js/binary/encoder.js"></script>
+<script src="./static/protobuf-3.6.1/js/binary/arith.js"></script>
+<script src="./static/protobuf-3.6.1/js/binary/writer.js"></script>
+
+<script type="text/javascript" src="./static/js/e2d.js"></script>
+<script type="text/javascript" src="./static/js/webrtcclient.js"></script>
+<script type="text/javascript" src=".//static/js/webrtcadmin.js"></script>
+
+<script src="https://www.gstatic.com/firebasejs/5.8.1/firebase.js"></script>
+<script
+	src="https://cdn.firebase.com/libs/firebaseui/3.1.1/firebaseui.js"></script>
+<link type="text/css" rel="stylesheet"
+	href="https://cdn.firebase.com/libs/firebaseui/3.1.1/firebaseui.css" />
+
+<link rel="stylesheet" href="./static/SlickGrid-2.4.1/examples/examples.css"
+	type="text/css" />
+<link rel="stylesheet" href="./static/SlickGrid-2.4.1/slick.grid.css"
+	type="text/css" />
+<link rel="stylesheet"
+	href="./static/SlickGrid-2.4.1/css/smoothness/jquery-ui-1.11.3.custom.css"
+	type="text/css" />
+
+
+<script>
+	// Initialize Firebase
+	var config = {
+		apiKey : "AIzaSyA8W-mZTiCjM-3NaHs9_fMSdamoKBJ9D58",
+		authDomain : "e2k-attempt2.firebaseapp.com",
+		databaseURL : "https://e2k-attempt2.firebaseio.com",
+		projectId : "e2k-attempt2",
+		storageBucket : "e2k-attempt2.appspot.com",
+		messagingSenderId : "552771505439"
+	};
+	firebase.initializeApp(config);
+</script>
+
+
+<script type="text/javascript">
+	// Initialize the FirebaseUI Widget using Firebase.
+	var ui = new firebaseui.auth.AuthUI(firebase.auth());
+	firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+
+	firebase
+			.auth()
+			.onAuthStateChanged(
+					function(user) {
+						menuItem = document.getElementById('ShowLoginMenuItem');						
+						if (user) {
+							if (user.isAnonymous) {
+								menuItem.innerText = "Anonymous user " + user.uid;
+								document.getElementById('firebaseui-auth-container').style.display = "block";
+								document.getElementById('sign-out-menu-element-id').style.display = "none";
+								menuItem.disabled = false;
+								auth2Login();
+							} else {
+								if(user.displayName) {
+									menuItem.innerText = user.displayName;
+								}
+								else {
+									menuItem.innerText = user.phoneNumber;
+								}
+								menuItem.disabled = true;
+								document.getElementById('firebaseui-auth-container').style.display = "none";
+								document.getElementById('sign-out-menu-element-id').style.display = "inline-block";
+							}
+							HideLoginButton();
+						} else {
+							document.getElementById('firebase-user-id').style.display = "none";
+							document.getElementById('firebaseui-auth-container').style.display = "block";
+							document.getElementById('sign-out-menu-element-id').style.display = "none";
+							auth2Login();
+						}
+					});
+
+	//firebase.auth().signInAnonymously().catch(function(error) {
+	//var errorCode = error.code;
+	//var errorMessage = error.message;
+	//});
+
+	//const promise = firebase.auth().signInAnonymously();
+
+	function auth2Login() {
+		var data = null;
+		var anonymousUser = firebase.auth().currentUser;
+
+		ui.start('#firebaseui-auth-container', {
+			signInOptions : [ {
+				provider : firebase.auth.FacebookAuthProvider.PROVIDER_ID,
+				scopes : [ 'public_profile' ],
+				customParameters : {
+				// Forces password re-entry.
+				//auth_type: 'reauthenticate'
+				}
+			}, {
+				provider : firebase.auth.GoogleAuthProvider.PROVIDER_ID,
+				scopes : [ 'https://www.googleapis.com/auth/plus.login' ],
+				customParameters : {
+					// Forces account selection even when one account
+					// is available.
+					prompt : 'select_account'
+				}
+			}, {
+				provider : firebase.auth.EmailAuthProvider.PROVIDER_ID
+			}, {
+				provider : firebase.auth.PhoneAuthProvider.PROVIDER_ID,
+				recaptchaParameters : {
+					type : 'image', // 'audio'
+					size : 'normal', // 'invisible' or 'compact'
+					badge : 'bottomleft' //' bottomright' or 'inline' applies to invisible.
+				}
+			}
+			//firebase.auth.TwitterAuthProvider.PROVIDER_ID,
+			//firebase.auth.GithubAuthProvider.PROVIDER_ID
+			]
+		// Other config options...
+		});
+	}
+
+	//auth2Login();		
+
+	function onShowLogin() {
+		element = document.getElementById('sign-out-menu-element-id');
+		if (element.style.display == "inline-block") {
+			HideLoginButton();
+		} else {
+			ShowLoginButton();
+		}
+	}
+
+	function ShowLoginButton() {
+		element = document.getElementById('firebaseui-auth-container');
+		element.style.display = "block";
+	}
+
+	function HideLoginButton() {
+		element = document.getElementById('firebaseui-auth-container');
+		element.style.display = "none";
+	}
+
+	function onSignOut() {
+		firebase.auth().signOut();
+		firebase.auth().signInAnonymously();
+		return false;
+	}
+
+	var listenerSocket;
+	
+
+	function onSendNegotiationToClients(gameId, type, binary) {
+		listenerSocket.send(binary);
+				
+		$.ajax({
+			   url: '/',
+			   type: 'POST',
+			   contentType: 'application/octet-stream',  
+			   data: "rtc=admin&type=" + type + "&gameId=" + gameId + "&data=" + binary,
+			   processData: true
+			});		
+		
+	}
+	
+	function onSendNegotiationToAdmin(gameId, type, binary) {
+		listenerSocket.send(binary);
+		
+		$.ajax({
+			   url: '/',
+			   type: 'POST',
+			   contentType: 'application/octet-stream',  
+			   data: "rtc=client&type=" + type + "&gameId=" + gameId + "&data=" + binary,
+			   processData: true
+			});		
+		
+	}
+	
+
+	var serverIP = "{{ vmIP }}";//"127.0.0.1";
+	function connectToListener() {
+		var ws = 'ws://';
+		if (location.protocol == 'https:') {
+			ws = "wss://";
+		}
+
+		listenerSocket = new WebSocket(ws + serverIP + ':27000');
+		listenerSocket.binaryType = 'arraybuffer';
+
+		listenerSocket.onopen = function() {
+			console.log('socket is opened');
+		};
+
+		listenerSocket.onclose = function(event) {
+			if (event.wasClean) {
+				console.log('Connection is closed properly');
+			} else {
+				console.log('Connection is lost');
+			}
+			console.log('Code: ' + event.code + ' reason: ' + event.reason);
+		};
+
+		listenerSocket.onmessage = function(event) {
+			var message = proto.ListenerToClientWrappedMessage
+					.deserializeBinary(event.data);
+			if (message.hasStates()) {
+				states = message.getStates();
+				gamesList = states.getGamestateList();
+
+				for (i = 0; i < gamesList.length; i++) {
+					roomPort = gamesList[i].getRoomport();
+					ri = gamesList[i].getRoominfo();
+					gs = ri.getGamestatus(); // 0 - none, 1 - waiting, 2 - playing
+					rs = ri.getRoomsize();
+					ws = ri.getWaitingsize();
+					description = ri.getRoomname();
+
+					if (gs == 1 || gs == 2) {
+						var state;
+						if (gs == 1)
+							state = "Waiting";
+						else
+							state = "Playing";
+						var idx = waitingDataView.getIdxById(serverIP + "_"
+								+ roomPort);
+
+						waitingDataView.beginUpdate();
+
+						if (idx == undefined) {
+							waitingDataView.addItem({
+								id : serverIP + "_" + roomPort,
+								IP : serverIP,
+								Port : roomPort,
+								RoomSize : rs,
+								WaitingSize : ws,
+								Description : description,
+								State: state
+							});
+							console.log('row + to waiting');
+						} else {
+							item = waitingDataView.getItemByIdx(idx);
+							item.IP = serverIP;
+							item.Port = roomPort;
+							item.RoomSize = rs;
+							item.WaitingSize = ws;
+							item.Decription = description;
+							item.State = state;
+
+							if (ws == 0) {
+								//waitingDataView.deleteItem(item.id);
+								//console.log('row - from waiting');
+							} else {
+								waitingDataView.updateItem(item.id, item);
+								console.log('update row in waiting');
+							}
+							waitingGrid.updateRow(idx);
+						}
+
+						waitingDataView.endUpdate();
+						waitingGrid.invalidate();
+
+					}
+					
+					if (gs == 0) {
+						idx = waitingDataView.getIdxById(serverIP + "_"
+								+ roomPort);
+						if (idx != undefined) {
+							waitingDataView.beginUpdate();
+							item = waitingDataView.getItemByIdx(idx);
+							waitingDataView.deleteItem(item.id);
+							waitingDataView.endUpdate();
+							console.log('delete row from waiting');
+							waitingGrid.invalidate();
+						}
+					}
+				}
+			}
+			else if (message.hasRtcstates()) {
+				var rtcStates = message.getRtcstates();
+				var rtcGamesStates = rtcStates.getRtcstateList();
+				for(i = 0; i < rtcGamesStates.length; i++) {
+					gameId = rtcGamesStates[0].getGamertcid();
+					gameName = rtcGamesStates[i].getGamename();
+					statusInGame = rtcGamesStates[i].getPlayerstatus(); // 0 - None, 1 - Admin, 2 - Client
+					roomSize = rtcGamesStates[i].getRoomsize();
+					playersCount = rtcGamesStates[i].getCurrentplayerscount();
+					
+					
+					var idx = rtcDataView.getIdxById(gameId);
+					
+					rtcDataView.beginUpdate();
+					
+					var state;
+					if (playersCount < roomSize)
+						state = "Waiting";
+					else
+						state = "Playing";
+					
+					if (idx == undefined) {
+						rtcDataView.addItem({
+							ID: gameId,
+							Name: gameName,
+							RoomSize: roomSize,
+							Players: playersCount,
+							Role: RtcRoleIntToString(statusInGame),
+							State: state
+						});
+					}
+					else {
+						item = rtcDataView.getItemByIdx(idx);
+						item.ID = gameId;
+						item.Name = gameName;
+						item.RoomSize = roomSize;
+						item.Players = playersCount;
+						item.Role = RtcRoleIntToString(statusInGame);
+						item.State = state;				
+						rtcGrid.updateRow(idx);						
+					}
+					
+					rtcDataView.endUpdate();
+					rtcGrid.invalidate();
+									
+					if (state == "Playing") {
+						if (statusInGame == 1) {						
+							connectToRTCClients(gameId, serverIP, currentXmlGame, onSendNegotiationToClients);
+
+							var adminAnswerCount = 0;
+							var adminCandidateCount = 0;							
+							// periodically check on clients responces
+							
+							var adminRTCCheck = setInterval(function(){
+								// query to web server about candidates (or games)
+								$.post("/", { rtc: "admin", type: "checkClients", gameId: gameId}, function(data, status) {
+									if (status == "success" && data != "") {
+										var arr = data.split(",");
+										var uint8Arr = new Uint8Array(arr);
+										var message = proto.ClientQueryRequest.deserializeBinary(uint8Arr);
+										if (message.hasRtcanswer()) {
+											var rtcAnswer = message.getRtcanswer();
+											var gameId = rtcAnswer.getGamertcid(); 
+											var answer = rtcAnswer.getAnswer();
+											var json = JSON.parse(answer);
+											if(json.action == "answer") {
+												adminAnswerCount++;
+												processAdminAnswer(json.data, gameId);												
+											}
+											else if(json.action == "candidate") {
+												processAdminIce(json.data);
+												adminCandidateCount++;
+											}
+										}										
+									}
+									if (adminAnswerCount > 0 && adminCandidateCount > 0) {
+										clearInterval(adminRTCCheck);
+									}
+								});
+							}, 1000);
+							
+						}
+						else if (statusInGame == 2) {
+							var clientOfferCount = 0;
+							var clientCandidateCount = 0;														
+							// periodically check on admin responces
+							
+							var clientRTCCheck = setInterval(function(){
+								// query to web server about candidates (or games)
+								$.post("/", { rtc: "client", type: "checkAdmin", gameId: gameId}, function(data, status) {
+									if (status == "success" && data != "") {
+										var arr = data.split(",");
+										var uint8Arr = new Uint8Array(arr);
+										var message = proto.ClientQueryRequest.deserializeBinary(uint8Arr);										
+										if (message.hasRtcoffer()) {
+											var rtcOffer = message.getRtcoffer();
+											var gameId = rtcOffer.getGamertcid();
+											var offer = rtcOffer.getOffer();
+											// ice candidate
+											var json = JSON.parse(offer);
+											if (json.action == "candidate") {
+												processClientIce(json.data);
+												clientCandidateCount++;																										
+											}
+											else if (json.action == "offer") {
+												processClientOffer(json.data, gameId, onSendNegotiationToAdmin);
+												clientOfferCount++;																										
+											}
+										}										
+									}
+									if (clientOfferCount > 0 && clientCandidateCount > 0) {
+										clearInterval(clientRTCCheck);
+									}									
+								});
+							}, 1000);
+							
+						}							
+					}
+					
+				}
+			}
+			else if (message.hasRtcoffer()) {
+				var rtcOffer = message.getRtcoffer();
+				var gameId = rtcOffer.getGamertcid();
+				var offer = rtcOffer.getOffer();
+				// ice candidate
+				var json = JSON.parse(offer);
+				
+				/*
+				if (json.action == "candidate") {
+					processClientIce(json.data);
+				}
+				else if (json.action == "offer") {
+					processClientOffer(json.data, gameId, onSendNegotiationToAdmin);
+				}
+				else if (json.action == "answer") {
+					processClientAnswer(json.data);
+				}
+				*/
+				///*
+				if (json.action == "answer") {
+					processClientAnswer(json.data);
+				}
+				//*/
+			}
+			
+			else if (message.hasRtcanswer()) {
+				/*
+				var rtcAnswer = message.getRtcanswer();
+				var gameId = rtcAnswer.getGamertcid(); 
+				var answer = rtcAnswer.getAnswer();
+				var json = JSON.parse(answer);
+				if(json.action == "answer") {
+					processAdminAnswer(json.data, gameId);
+				}
+				else if(json.action == "candidate") {
+					processAdminIce(json.data);
+				}
+				*/
+			}
+			
+		}
+	}
+	
+	function RtcRoleIntToString(roleInt) {
+		switch(roleInt)	{
+			case 0:
+				return "None";
+				break;
+			case 1:
+				return "Admin";
+				break;
+			case 2:
+				return "Client";
+				break;
+		}
+		
+		return "Unknown";
+	}
+	
+	
+</script>
+
+<script src="./static/SlickGrid-2.4.1/lib/jquery-1.11.2.min.js"></script>
+<script src="./static/SlickGrid-2.4.1/lib/jquery.event.drag-2.3.0.js"></script>
+
+<script src="./static/SlickGrid-2.4.1/slick.core.js"></script>
+<script src="./static/SlickGrid-2.4.1/slick.grid.js"></script>
+<script src="./static/SlickGrid-2.4.1/slick.dataview.js"></script>
+
+<script src="./static/SlickGrid-2.4.1/plugins/slick.rowselectionmodel.js"></script>
+
+<script>
+	var waitingGrid;
+	var waitingColumns = [ {
+		IP : "IP",
+		name : "IP",
+		field : "IP"
+	}, {
+		port : "Port",
+		name : "Port",
+		field : "Port"
+	}, {
+		RoomSize : "RoomSize",
+		name : "Room size",
+		field : "RoomSize"
+	}, {
+		WaitingSize : "WaitingSize",
+		name : "Waiting size",
+		field : "WaitingSize"
+	}, {
+		Description : "Description",
+		name : "Description",
+		field : "Description"
+	}, {
+		State: "State",
+		name: "State",
+		field: "State"
+	} ];
+	var waitingOptions = {
+		enableCellNavigation : true,
+		enableColumnReorder : false,
+		forceFitColumns : true
+	};
+	var waitingDataView = new Slick.Data.DataView();
+	waitingDataView.onRowCountChanged.subscribe(function(e, args) {
+		waitingGrid.updateRowCount();
+		waitingGrid.render();
+	});
+	waitingDataView.onRowsChanged.subscribe(function(e, args) {
+		waitingGrid.invalidateRows();
+		waitingGrid.render();
+	});
+	var waitingData = [];
+	$(function() {
+		waitingGrid = new Slick.Grid("#WaitingGrid", waitingDataView,
+				waitingColumns, waitingOptions);
+		waitingDataView.setItems(waitingData);
+
+		waitingGrid.setSelectionModel(new Slick.RowSelectionModel());
+		waitingGrid.onClick.subscribe(function(e) {
+			var btn = document.getElementById('play_btn');
+			btn.disabled = false;
+			btn = document.getElementById('view_btn');
+			btn.disabled = true;
+
+			var cell = waitingGrid.getCellFromEvent(e);
+			waitingGrid.setSelectedRows([ cell.row ]);
+
+			var selectrow = waitingGrid.getSelectedRows();
+			
+			var selectedIP = waitingGrid.getDataItem(selectrow).IP;
+			var selectedPort = waitingGrid.getDataItem(selectrow).Port;			
+			
+			document.getElementById('selectedIP').value = selectedIP;
+			document.getElementById('selectedPort').value = selectedPort;
+
+			e.stopPropagation();
+				
+			if(waitingGrid.getDataItem(selectrow).State == "Playing") {
+                //view_ref = "http://" + serverIP + ":8080/?btnGame=VIEW&selectedIP=" + selectedIP + "&selectedPort=" + selectedPort;
+                view_url = "viewGame?roomMode=view&roomIP=" + selectedIP + "&roomPort=" + selectedPort + "&webRTCGameId=-1";
+				window.frames[0].location.href = view_url;
+			}
+		});
+		
+		waitingGrid.onDblClick.subscribe(function(e) {	
+			var selectrow = waitingGrid.getSelectedRows();									
+			var selectedIP = waitingGrid.getDataItem(selectrow).IP;
+			var selectedPort = waitingGrid.getDataItem(selectrow).Port;						
+            const play_url = "viewGame?roomMode=play&roomIP=" + selectedIP + "&roomPort=" + selectedPort + "&webRTCGameId=-1";
+			window.frames[0].location.href = play_url;
+            
+			//const url="http://" + serverIP + ":8080/?btnGame=PLAY&selectedIP=" + selectedIP + "&selectedPort=" + selectedPort;            
+			//location.replace(url);			
+		});
+	})
+			
+	var rtcGrid;
+	var rtcColumns = [ {
+		ID: "ID",
+		name: "ID",
+		field: "ID"
+	}, {
+		Name: "Name",
+		name: "Name",
+		field: "Name"
+	}, {
+		RoomSize: "RoomSize",
+		name: "Room size",
+		field: "RoomSize"		
+	}, {
+		Players: "Players",
+		name: "Players",
+		field: "Players"
+	}, {
+		Role: "Role",
+		name: "Role",
+		field: "Role"
+	}, {
+		State: "State",
+		name: "State",
+		field: "State"
+	} ];
+	var rtcOptions = {
+		enableCellNavigation : true,
+		enableColumnReorder : false,
+		forceFitColumns : true			
+	};
+	var rtcDataView = new Slick.Data.DataView();
+	rtcDataView.onRowCountChanged.subscribe(function(e, args) {
+		rtcGrid.updateRowCount();
+		rtcGrid.render();
+	});
+	rtcDataView.onRowsChanged.subscribe(function(e, args) {
+		rtcGrid.invalidateRows();
+		rtcGrid.render();
+	});
+	var rtcData = [];
+	$(function(){
+		rtcGrid = new Slick.Grid("#rtcGrid", rtcData, rtcColumns, rtcOptions);
+		rtcDataView.setItems(rtcData, "ID");	
+		
+		rtcGrid.setSelectionModel(new Slick.RowSelectionModel());
+		rtcGrid.onClick.subscribe(function(e) {
+			
+		})
+	})
+	
+	/*		
+	var intervalID = setInterval(function(){
+		// query to web server about candidates (or games)
+		$.post("", { submit: "GetCandidates"}, function(data, status) {
+			console.log("Data: " + data + "\nStatus: " + status);
+		});
+	}, 5000);
+	*/			
+</script>
+
+
+<script>
+	var currentXmlGame = ""; 
+
+	function requestNewRTCGame() {
+		var selectedIndex = document.getElementById('selectRTCgame').selectedIndex;
+		var gameName = document.getElementById('selectRTCgame')[selectedIndex].text;
+		var roomSize = document.getElementById('rtcGamePlayers').innerHTML;
+		
+		var message = new proto.ClientQueryRequest();		
+		var rtcAdminRequest = new proto.RTCGameAdminRequest();
+		rtcAdminRequest.setGamename(gameName);					
+		rtcAdminRequest.setRoomsize(roomSize);
+		message.setRtcadminrequest(rtcAdminRequest);
+		var binary = message.serializeBinary();
+		listenerSocket.send(binary);		
+	}
+	
+	function joinRTCGame() {
+		var selectedRow = rtcGrid.getSelectedRows();
+		var selectedItem = rtcGrid.getDataItem(selectedRow);
+		var selectedID = selectedItem["ID"];
+		
+		var message = new proto.ClientQueryRequest();
+		var rtcClientRequest = new proto.RTCGameClientRequest();
+		rtcClientRequest.setId(selectedID);
+		message.setRtcclientrequest(rtcClientRequest);
+		var binary = message.serializeBinary();
+		listenerSocket.send(binary);		
+	}
+	
+	function withdrawRTCGame() {
+		
+	}
+	
+	var gamesRTCXmlFiles = {};
+	
+	function fillDefaultGames()
+	{
+		$.ajax({
+			url : './static/games/games.txt',
+			type : 'POST',
+			dataType : "text"
+		})
+		.done(
+				function(data) {
+					var lines = data.split("\n");
+					var sourceRoot = lines[0].trimRight();
+					var root = sourceRoot[0].toLowerCase() + sourceRoot.substr(1, sourceRoot.length);
+					for (var i = 1, len = lines.length; i < len; i++) {
+						var fileName = lines[i].trimRight();
+						var index = fileName.indexOf(root);
+						if (index != -1) {
+							var relativePath = fileName.substring(
+									root.length, fileName.length);
+							var shortFileName = relativePath.substring(relativePath.lastIndexOf('\\') + 1);
+							var shortFileNameWOExt = shortFileName.substring(0, shortFileName.indexOf('.'));
+							var fullFileName = 'games\\' + relativePath;
+							gamesRTCXmlFiles[shortFileNameWOExt] = fullFileName;
+						}
+					}
+					
+					for(var fName in gamesRTCXmlFiles) {
+						$('#selectRTCgame').append('<option CLASS="a">' + fName + '</option>');
+					}
+				}
+		);				
+	}
+	
+	function onRTCGameChange(selectObj) {
+		var shortName = selectObj.options[selectObj.selectedIndex].value;
+		var fName = gamesRTCXmlFiles[shortName];
+		$.ajax({
+			url : fName,
+			type : 'POST',
+			dataType : "text"
+		}).done(function(data) {
+			applySelectedRTCGame(data);
+		});		
+	}
+
+	function applySelectedRTCGame(content) {
+		if (content == "")
+			return;
+		
+		currentXmlGame = $.parseXML(content);
+		var gameDescription = $(currentXmlGame).find('Description')[0];
+		var gameWidth = $(currentXmlGame).find('Width')[0];
+		var gameHeight = $(currentXmlGame).find('Height')[0];
+		var playersCount = $(currentXmlGame).find('count')[0];
+		
+		document.getElementById('rtcGameDescription').innerHTML = gameDescription.textContent;		
+		document.getElementById('rtcGameWidth').innerHTML = gameWidth.textContent;
+		document.getElementById('rtcGameHeight').innerHTML = gameHeight.textContent;
+		document.getElementById('rtcGamePlayers').innerHTML = playersCount.textContent;
+	}
+	
+</script>
+
+</head>
+
+<body onload="fillDefaultGames(), connectToListener()">
+
+	<div class="topnav flex-row space-between">
+		<div class="menu-left">
+			<a class="active" href="https://www.1.com">Main</a>
+			<a href="https://www.3.com">Story</a>
+			<a href="https://www.4.com">Techical details</a>
+			<a href="https://www.2.com">Forum</a>
+			<a href="https://www.5.com">Contacts</a>
+			<a href="https://www.6.com">About</a>
+		</div>
+		<div class="menu-right">	
+			<a href="javascript: onShowLogin()" id=ShowLoginMenuItem>User</a>
+			<a href="javascript: onSignOut()" id="sign-out-menu-element-id">Sign out</a>
+		</div>			
+	</div>
+
+	<div class="container">
+		<div class="left-col">
+			<form class="form" name="SelectedForm" method="get">
+				<p>GAMES</p>
+				<button class="play_btn" id="play_btn" type="submit" name="btnGame"
+					value="PLAY" disabled>PLAY SELECTED</button>
+				<button class="view_btn" id="view_btn" type="submit" name="btnGame"
+					value="VIEW" disabled>VIEW SELECTED</button>
+				<input type="text" name="selectedIP" id="selectedIP" value=""></input>
+				<input type="text" name="selectedPort" id="selectedPort" value=""></input>
+			</form>
+
+
+				<div class="flex-row">
+					<div class="flex-col">
+						<div>Waiting games:</div>
+						<div id="WaitingGrid" style="width: 400px; height: 200px;"></div>
+
+						
+							<div class="flex-row">						
+								<div>RTC games:</div>
+								<button type="button" name="RequestWebRTC" id="RequestWebRTC" onclick="requestNewRTCGame()">Request WebRTC Game</button>								
+								<button type="button" name="JoinWebRTC" id="JoinWebRTC" onclick="joinRTCGame()">Join WebRTC Game</button>
+								<button type="button" name="WithdrawWebRTC" id="WithdrawWebRTC" onclick="withdrawRTCGame()">Withdraw WebRTC Game</button>
+							</div>
+							<div class="flex-row">
+								<select name="selectRTCgame" id="selectRTCgame" STYLE="width: 400px" onchange="onRTCGameChange(this)"></select>							
+							</div>
+							<div class="flex-row">
+								<div class="margin-5">Description</div>
+								<div class="margin-5" id="rtcGameDescription"></div>
+							</div>											
+							<div class="flex-row">
+								<div class="margin-5">Width</div>
+								<div class="margin-5" id="rtcGameWidth"></div>
+							</div>					
+							<div class="flex-row">
+								<div class="margin-5">Height</div>
+								<div class="margin-5" id="rtcGameHeight"></div>													
+							</div>
+							<div class="flex-row">
+								<div class="margin-5">Players</div>
+								<div class="margin-5" id="rtcGamePlayers"></div>													
+							</div>
+							<div class="flex-row">
+								<div id="rtcGrid" style="width: 400px; height: 200px;"></div>
+							</div>												
+						
+					</div>
+				</div>
+		</div>	
+
+<!-- 
+			<form class="form" method="post">			
+				<button type="btn" type="submit" name="submit" value="NEWGAME">NEW GAME</button>
+			</form>
+-->			
+			
+			<frameset>
+				<iframe id="previewFrame" width=1000 height=800>
+				</iframe>
+			</frameset>
+
+			<div class="right-col">
+				<div id="firebaseui-auth-container" style="display: none" align="left"></div>
+			</div>
+
+			
+		</div>
+
+    <div class="topnav flex-row space-between">
+        <div class="menu-right">
+            <a class="max_btn">MAX</a>
+            <a class="fit_btn">FIT</a>
+        </div>
+    </div>
+
+	</div>
+</body>
+
+</html>
