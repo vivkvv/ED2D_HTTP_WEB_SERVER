@@ -1341,13 +1341,15 @@
         	{
             	$(".slide-up-down")[0].attributes["open"] = 0;
                 $(".slide-up-down").addClass('open');            	
-            	$(".controls").slideDown();
+            	//$(".controls").slideDown();
+                $(".controls").slideToggle();
         	}
         	else
         	{
             	$(".slide-up-down")[0].attributes["open"] = 1;      
                 $(".slide-up-down").removeClass('open');            	
-            	$(".controls").slideUp();        		
+            	//$(".controls").slideUp();        		
+                $(".controls").slideToggle();
         	}
         });
     });	
