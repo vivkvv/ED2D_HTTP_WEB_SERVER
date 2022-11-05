@@ -34,31 +34,31 @@
 
 <script id="shader-fs" type="x-shader/x-fragment">
 	precision mediump float;
-	
+
 	const float PI = 3.1415926535897932384626433832795;
 	const float chargeRadius = 5.0;
 	const float chargeRadius2 = chargeRadius * chargeRadius;
 
 	uniform int uChargesCount;
 	uniform int uCurrentChargeId;
-	uniform vec4 uChargesTraits[50];	
+	uniform vec4 uChargesTraits[50];
 	uniform vec4 uChargesTraits2[50];
-	
+
 	uniform sampler2D u_ForcesPaletteTexture;
 	uniform sampler2D u_EqiPotentialPaletteTexture;
-		
+
 	void main(void)
-	{	    
+	{
 		for(int i = 0; i < 256; i++)
 		{
 			if (i >= uChargesCount)
 			{
 				break;
 			}
-		
+
 			vec2 vdist2 = uChargesTraits[i].xy - gl_FragCoord.xy;
 			float dist2 = dot(vdist2, vdist2);
-			
+
 			if (dist2 < chargeRadius2)
 			{
 				if (uChargesTraits[i][3] >= 0.0)
@@ -71,21 +71,21 @@
 				}
 				return;
 			}
-			
+
 			if (i == uCurrentChargeId && dist2 >= chargeRadius2 && dist2 <= 2.0 * chargeRadius2)
 			{
 				gl_FragColor = vec4(1.0, 1.0, 0.0, 1.0);
 				return;
 			}
-			
-		}	
-						
+
+		}
+
 		float potential = 0.0;
 		float ex = 0.0;
 		float ey = 0.0;
 		float alpha = 0.0;
 		float b = 0.0;
-		
+
 		for(int i = 0; i < 256; i++)
 		{
 			if (i >= uChargesCount)
@@ -96,19 +96,19 @@
 			vec2 vdist2 = uChargesTraits[i].xy - gl_FragCoord.xy;
 			float dist = sqrt(dot(vdist2, vdist2));
 
-			vec2 rad = uChargesTraits[i].xy;			
+			vec2 rad = uChargesTraits[i].xy;
 			vec2 vel = uChargesTraits2[i].xy;
-			
+
 			float q = uChargesTraits[i][3];
 			potential += 0.2 * q * log(dist);
 
 			ex += vdist2.x * (uChargesTraits[i][3] / dist);
-			ey += vdist2.y * (uChargesTraits[i][3] / dist);			
+			ey += vdist2.y * (uChargesTraits[i][3] / dist);
 
 			//alpha += uChargesTraits[i][3]  * atan(vdist2.y, vdist2.x);
 
 			b += 1000.0 * q * (vel.x * rad.y - vel.y * rad.x)  / dist;
-		}		
+		}
 
 		alpha = atan(ex, ey);
 
@@ -130,8 +130,8 @@
 
 		float val1 = clr * clr; // 0 - 1
 		vec4 color1 = texture2D(u_EqiPotentialPaletteTexture, vec2(val1, 0.5));
-	
-		gl_FragColor = mix(color, color1, 0.5);        
+
+		gl_FragColor = mix(color, color1, 0.5);
 	}
 </script>
 
@@ -140,7 +140,7 @@
 
 	uniform mat4 uMVMatrix;
 	uniform mat4 uPMatrix;
-	
+
 	void main(void)
 	{
 		gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
@@ -155,7 +155,7 @@
 	void main() {
 		vec2 rotatedPosition = vec2(a_Position.x * cos(angle) - a_Position.y * sin(angle),
 									a_Position.x * sin(angle) + a_Position.y * cos(angle));
-	
+
 		vec2 position = rotatedPosition + u_translation;
 		gl_Position = vec4(position, -0.5, 1.0);
 	}
@@ -169,21 +169,21 @@
 		gl_FragColor = u_arrowColor;
 	}
 </script>
-    
+
 <script type="text/javascript">
-    
-    
+
+
     function gotoPrevForceColormap(){
-        element = document.getElementById('forcesColormaps'); 
+        element = document.getElementById('forcesColormaps');
         if (element.selectedIndex > 0){
             element.selectedIndex = element.selectedIndex - 1;
             currentValue = element.value;
             element.dispatchEvent(new CustomEvent("change", {value:currentValue}));
         }
     }
-    
+
     function gotoNextForceColormap(){
-        element = document.getElementById('forcesColormaps'); 
+        element = document.getElementById('forcesColormaps');
         if (element.selectedIndex < element.length - 1){
             element.selectedIndex = element.selectedIndex + 1;
             currentValue = element.value;
@@ -192,23 +192,23 @@
     }
 
     function gotoPrevEqiPotentialColormap(){
-        element = document.getElementById('eqiPotentialColorMaps'); 
+        element = document.getElementById('eqiPotentialColorMaps');
         if (element.selectedIndex > 0){
             element.selectedIndex = element.selectedIndex - 1;
             currentValue = element.value;
             element.dispatchEvent(new CustomEvent("change", {value:currentValue}));
         }
     }
-    
+
     function gotoNextEqiPotentialColormap(){
-        element = document.getElementById('eqiPotentialColorMaps'); 
+        element = document.getElementById('eqiPotentialColorMaps');
         if (element.selectedIndex < element.length - 1){
             element.selectedIndex = element.selectedIndex + 1;
             currentValue = element.value;
             element.dispatchEvent(new CustomEvent("change", {value:currentValue}));
         }
-    }    
-    
+    }
+
 	var gl;
 	var canvas;
 	var fpsNode;
@@ -225,7 +225,7 @@
 	var roomPort = {{ roomPort }}; //26001;//
 	var webRTCGameId = {{ webRTCGameId }}; // -1
 
-	
+
 	var paletteTextures = [];
 
 	function initGL(canvas) {
@@ -333,7 +333,7 @@
 				"uPMatrix");
 		shaderProgram.mvMatrixUniform = gl.getUniformLocation(shaderProgram,
 				"uMVMatrix");
-		
+
 		shaderProgram.chargesCount = gl.getUniformLocation(shaderProgram,
 				"uChargesCount");
 		shaderProgram.currentChargeId = gl.getUniformLocation(shaderProgram,
@@ -351,17 +351,17 @@
 
 		shaderProgram2 = gl.createProgram();
 		gl.attachShader(shaderProgram2, arrowShaderVs);
-		gl.attachShader(shaderProgram2, arrowShaderFs);		
+		gl.attachShader(shaderProgram2, arrowShaderFs);
 		gl.linkProgram(shaderProgram2);
 		gl.useProgram(shaderProgram2);
-		
+
 		shaderProgram2.arrowPositionAttribute = gl.getAttribLocation(shaderProgram2, "a_Position");
 		shaderProgram2.AngleUniform = gl.getUniformLocation(shaderProgram2, "angle");
 		shaderProgram2.TranslationUniform = gl.getUniformLocation(shaderProgram2, "u_translation");
 		shaderProgram2.ArrowColor = gl.getUniformLocation(shaderProgram2, "u_arrowColor");
-	
-		initArrow(gl);		
-		
+
+		initArrow(gl);
+
 	}
 
 	var startTime;
@@ -387,7 +387,7 @@
 	var chargesCount;
 	var chargesTraits = [];
 	var chargesTraits2 = [];
-	var chargesTraits3 = []; // fex, fey, fbx, fby	
+	var chargesTraits3 = []; // fex, fey, fbx, fby
 	var chargesTraitsTypes = [];
 
 	var mQulon;
@@ -395,7 +395,7 @@
 	var mIfMagnetic;
 
 	var useLocalCalculation = false;
-	
+
 	var positionBuffer;
 
 	function setMatrixUniforms() {
@@ -434,27 +434,27 @@
 			0.03, -0.01,
 			0.03, 0.0
 		]);
-		
+
 		positionBuffer = gl.createBuffer();
 		if(!positionBuffer) {
 			console.log('Failed to create the buffer object');
 			return -1;
 		}
-		
+
 		// bind the buffer object to target
 		gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
 		// write data into buffer object
 		gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
-			
+
 		// connect the assignment to a_Position variable
 		gl.vertexAttribPointer(shaderProgram2.arrowPositionAttribute, 2, gl.FLOAT, false, 0, 0);
-		
+
 		// enable the assignment to a_Position variable
 		gl.enableVertexAttribArray(shaderProgram2.arrowPositionAttribute);
 	}
 
 	function drawCharges()
-	{	
+	{
 		gl.uniform1i(shaderProgram.chargesCount, chargesCount);
 		gl.uniform1i(shaderProgram.currentChargeId, currentChargeIdIndex);
 		gl.uniform4fv(shaderProgram.chargesTraits, chargesTraits);
@@ -468,58 +468,58 @@
 		mat4.identity(mvMatrix);
 
 		mat4.translate(mvMatrix, [ 0.0, 0.0, -5.0 ]); // black stripes are possible
-	
+
 		for (i = 0; i < chargesCentersBuffer.length; i++) // fake drawing
 		{
 			gl.bindBuffer(gl.ARRAY_BUFFER, chargesCentersBuffer[i]);
 			gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, chargesCentersBuffer[i].itemSize, gl.FLOAT, false, 0, 0);
 			setMatrixUniforms();
 			gl.drawArrays(gl.TRIANGLE_STRIP, 0, chargesCentersBuffer[i].numItems);
-		}		
+		}
 	}
-	
+
 	function drawArrows(selectedIndex, arrowColor, coordArray, arr, startIndex)
 	{
 		if(selectedIndex == 0)
 		{
-			return;	
+			return;
 		}
-		
+
 		for (i = 0; i < chargesCount; i++)
 		{
 			if(chargesTraitsTypes[i] == 0)
 			{
-				continue;	
+				continue;
 			}
 
 			if(selectedIndex == 1 && currentChargeIdIndex != i)
 			{
 				continue;
-			}			
-			
+			}
+
 			var x = coordArray[4 * i];
 			var y = coordArray[4 * i + 1];
 			var value_x = arr[4 * i + startIndex];
 			var value_y = arr[4 * i + startIndex + 1];
-			
+
 			if(value_y == 0 && value_x == 0)
 			{
 				continue;
 			}
-			
+
 			var angle = Math.atan2(value_y, value_x);
 			var translation = [2 * x / gl.viewportWidth - 1, 2 * y / gl.viewportHeight - 1];
 			gl.uniform1f(shaderProgram2.AngleUniform, angle);
 			gl.uniform2fv(shaderProgram2.TranslationUniform, translation);
 			gl.uniform4fv(shaderProgram2.ArrowColor, arrowColor);
-			gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);	
-			gl.vertexAttribPointer(shaderProgram2.arrowPositionAttribute, 2, gl.FLOAT, false, 0, 0);			
+			gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+			gl.vertexAttribPointer(shaderProgram2.arrowPositionAttribute, 2, gl.FLOAT, false, 0, 0);
 			gl.drawArrays(gl.LINE_STRIP, 0, 6);
 		}
 	}
-	
-	
-	function drawScene() {	
+
+
+	function drawScene() {
 		gl.activeTexture(gl.TEXTURE0);
 		gl.bindTexture(gl.TEXTURE_2D, paletteTextures[0]);
 
@@ -546,7 +546,7 @@
 			recalculate(deltaTimeLocal / 10.0, chargesCount, coords, velocities, forces);
 			chargesTraits = coords.slice(0);
 			chargesTraits2 = velocities.slice(0);
-			chargesTraits3 = forces.slice(0);			
+			chargesTraits3 = forces.slice(0);
 			prevPacketTimeLocal = currentTime;
 		}
 
@@ -561,21 +561,21 @@
 
 		gl.useProgram(shaderProgram);
 		drawCharges();
-		
+
 		// draw arrows
 		gl.useProgram(shaderProgram2);
 		// velocity arrows
-		var element = document.getElementById("velocitiesarrows");		
+		var element = document.getElementById("velocitiesarrows");
 		drawArrows(element.selectedIndex, [1.0, 0.0, 0.0, 1.0], chargesTraits, chargesTraits2, 0);
 		// electric forces arrows
-		element = document.getElementById("electricarrows");		
-		drawArrows(element.selectedIndex, [0.0, 1.0, 0.0, 1.0], chargesTraits, chargesTraits3, 0);		
+		element = document.getElementById("electricarrows");
+		drawArrows(element.selectedIndex, [0.0, 1.0, 0.0, 1.0], chargesTraits, chargesTraits3, 0);
 		// magnetic forces arrows
-		element = document.getElementById("magneticarrows");		
+		element = document.getElementById("magneticarrows");
 		drawArrows(element.selectedIndex, [0.0, 0.0, 1.0, 1.0], chargesTraits, chargesTraits3, 2);
-		
+
 		previousTime = currentTime;
-		
+
 		// showPredictionCB
 		element =  document.getElementById('showPrediction');
 		if(element.selectedIndex > 0)
@@ -584,21 +584,22 @@
 			var coords = chargesTraits.slice();
 			var velocities = chargesTraits2.slice();
 			var forces = chargesTraits3.slice();
-			
-			
+
+
 			for(var i = 0; i < 10; i++)
 			{
 				recalculate(deltaTimeLocal / 10.0, chargesCount, coords, velocities, forces);
-				// show 
+				// show
 				drawArrows(element.selectedIndex, [1.0, 1.0, 0.0, 1.0], coords, velocities, 0);
 			}
 		}
-		
-		if (soundFlag == 1) {
+
+		//if (soundFlag == 1) {
 			var audio = new Audio(
-					"148103__barkenov__crystal-frappe-doux-resonnance-fa.wav");
-			//audio.play();
-		}
+					//"148103__barkenov__crystal-frappe-doux-resonnance-fa.wav");
+				'.\static\sounds\562196__gristi__snd-fragment-retrieve.wav');
+			audio.play();
+		//}
 	}
 
 	var currentlyPressedKeys = {};
@@ -609,7 +610,7 @@
 	}
 
 	function handleKeyUp(event) {
-		event.preventDefault();		
+		event.preventDefault();
 		currentlyPressedKeys[event.keyCode] = false;
 	}
 
@@ -728,7 +729,7 @@
 		Module.HEAPF32.set(array, buffer >> 2);
 		return buffer;
 	}
-	
+
 	function freeModuleMemory(array) {
 		Module._free(array);
 	}
@@ -755,8 +756,8 @@
 		var typesArray = new Int8Array(count);
 		var fexArray = new Float32Array(count);
 		var feyArray = new Float32Array(count);
-		var fbxArray = new Float32Array(count);		
-		var fbyArray = new Float32Array(count);		
+		var fbxArray = new Float32Array(count);
+		var fbyArray = new Float32Array(count);
 
 		for (i = 0; i < count; i++) {
 			xArray[i] = coords[4 * i];
@@ -789,7 +790,7 @@
 				bufferFex, bufferFey, bufferFbx, bufferFby,
 				mQulon, mIfMagnetic,
 				mLightVelocity, deltaTime, geometryWidth, geometryHeight);
-			
+
 		// coords, velocities, forces
 		for (i = 0; i < count; i++) {
 			coords[4 * i] = Module.HEAPF32[bufferX
@@ -801,7 +802,7 @@
 					/ Float32Array.BYTES_PER_ELEMENT + i];
 			velocities[4 * i + 1] = Module.HEAPF32[bufferVY
 					/ Float32Array.BYTES_PER_ELEMENT + i];
-			
+
 			forces[4 * i] = Module.HEAPF32[bufferFex
 				/ Float32Array.BYTES_PER_ELEMENT + i];
 			forces[4 * i + 1] = Module.HEAPF32[bufferFey
@@ -809,9 +810,9 @@
 			forces[4 * i + 2] = Module.HEAPF32[bufferFbx
 				/ Float32Array.BYTES_PER_ELEMENT + i];
 			forces[4 * i + 3] = Module.HEAPF32[bufferFby
-				/ Float32Array.BYTES_PER_ELEMENT + i];			
-		}		
-		
+				/ Float32Array.BYTES_PER_ELEMENT + i];
+		}
+
 		freeModuleMemory(bufferX);
 		freeModuleMemory(bufferY);
 		freeModuleMemory(bufferZ);
@@ -824,8 +825,8 @@
 		freeModuleMemory(bufferFex);
 		freeModuleMemory(bufferFey);
 		freeModuleMemory(bufferFbx);
-		freeModuleMemory(bufferFby);			
-		
+		freeModuleMemory(bufferFby);
+
 	}
 
 	function tick() {
@@ -852,11 +853,11 @@
 		document.getElementById('forcesColorMapFiles').addEventListener(
 				'change', fillColormaps, false);
 
-		
+
 		if (webRTCGameId > -1) {
 			return;
 		}
-		
+
 		//var gameIp;
 		var gamePort;
 		var gameTicket;
@@ -875,25 +876,25 @@
 		}
 
 		var listenerSocket = new WebSocket(ws + serverIP + ':27000');
-		listenerSocket.binaryType = 'arraybuffer';		
+		listenerSocket.binaryType = 'arraybuffer';
 
 		listenerSocket.onopen = function() {
-			console.log('socket is opened');			
+			console.log('socket is opened');
 			// playquery (ip and port) OR viewquery
 			var message = new proto.ClientQueryRequest();
 			if(roomMode == "play")
 			{
 				var playGameRequest = new proto.PlayGameRequest();
 				playGameRequest.setIp(roomIP);
-				playGameRequest.setPort(roomPort);						
+				playGameRequest.setPort(roomPort);
 				message.setPlayrequest(playGameRequest);
 			}
 			else
 			{
 				var viewGameRequest = new proto.ViewGameRequest();
 				viewGameRequest.setIp(roomIP);
-				viewGameRequest.setPort(roomPort);						
-				message.setViewrequest(viewGameRequest);				
+				viewGameRequest.setPort(roomPort);
+				message.setViewrequest(viewGameRequest);
 			}
 			var binary = message.serializeBinary();
 			listenerSocket.send(binary);
@@ -909,14 +910,14 @@
 		};
 
 		listenerSocket.onmessage = function(event) {
-			
+
 			var message = proto.ListenerToClientWrappedMessage.deserializeBinary(event.data);
-			
+
 			if (message.hasInvitationtoplay()) {
 				invitation = message.getInvitationtoplay();
 				//var gameIp = invitation.getClientip();
 				var gamePort = invitation.getClientport();
-				var gameTicket = invitation.getTicket();;					
+				var gameTicket = invitation.getTicket();;
 			}
 			else if (message.hasStates()) {
 				states = message.getStates();
@@ -935,12 +936,12 @@
 				invitation = message.getInvitationtoview();
 				//var gameIp = invitation.getClientip();
 				var gamePort = invitation.getClientport();
-				var gameTicket = invitation.getTicket();;					
+				var gameTicket = invitation.getTicket();;
 			}
 			else {
 				return;
 			}
-			
+
 			//listenerSocket.close(); - do not close, listen for games events
 
 			//gameAddress = 'ws://' + gameIp + ':' + gamePort;
@@ -982,24 +983,24 @@
 
 					mIfMagnetic = geometry.getIfmagnetic();
 					document.getElementById('B').checked = mIfMagnetic;
-					
+
 					var forcesShowStruct = geometry.getForcesshowstruct();
 					if(forcesShowStruct.getPalettetype() == 0) // discrete
 					{
 						paletteName = forcesShowStruct.getPalettename();
-						element = document.getElementById('forcesColormaps'); 
+						element = document.getElementById('forcesColormaps');
 						element.value = paletteName;
 						element.dispatchEvent(new CustomEvent("change", {value:paletteName}));
 					}
-					
+
 					var eqPotentialsShowStruct = geometry.getEqpotentialsshowstruct();
 					if(eqPotentialsShowStruct.getPalettetype() == 0) // discrete
 					{
 						paletteName = eqPotentialsShowStruct.getPalettename();
-						element = document.getElementById('eqiPotentialColorMaps'); 
+						element = document.getElementById('eqiPotentialColorMaps');
 						element.value = paletteName;
-						element.dispatchEvent(new Event("change"));						
-					}										
+						element.dispatchEvent(new Event("change"));
+					}
 				} else if (message.hasRoomtoclient()) {
 					document.getElementById('useLocalLabel').style.color = '#00FF00';
 
@@ -1030,8 +1031,8 @@
 					if (!isInit) {
 						if(geometryWidth != undefined && geometryHeight != undefined)
 						{
-							isInit = true;						
-							webGLStart();							
+							isInit = true;
+							webGLStart();
 						}
 						else
 						{
@@ -1068,21 +1069,21 @@
 
 						// type
 						chargesTraitsTypes[i] = chargeInfoList[i].getType();
-						
+
 						// fex, fey, fbx, fby
 						chargesTraits3[4 * i]     = chargeInfoList[i].getFex();
-						chargesTraits3[4 * i + 1] = chargeInfoList[i].getFey();						
-						chargesTraits3[4 * i + 2] = chargeInfoList[i].getFbx();						
-						chargesTraits3[4 * i + 3] = chargeInfoList[i].getFby();						
+						chargesTraits3[4 * i + 1] = chargeInfoList[i].getFey();
+						chargesTraits3[4 * i + 2] = chargeInfoList[i].getFbx();
+						chargesTraits3[4 * i + 3] = chargeInfoList[i].getFby();
 					}
 				}
 				//console.log("game message " + message.data);
 
 				//var msg = new proto.ClientWrappedMessage();
-				//var ping = new proto.Ping();		
-				//ping.setPing(0);		
+				//var ping = new proto.Ping();
+				//ping.setPing(0);
 				//msg.setPing(ping);
-				//var binary = msg.serializeBinary();				
+				//var binary = msg.serializeBinary();
 				//gameSocket.send(binary);
 
 			};
@@ -1106,15 +1107,15 @@
 		canvas.top = 100;
 		canvas.width = geometryWidth;
 		canvas.height = geometryHeight;
-			
+
 		gl = canvas.getContext("webgl");
-		
+
 		//gl.depthFunc(gl.ALWAYS);
-		
+
 		viewportWidth = geometryWidth;
 		viewportHeight = geometryHeight;
 		gl.viewportWidth = viewportWidth;
-		gl.viewportHeight = viewportHeight;	
+		gl.viewportHeight = viewportHeight;
 
 		var fpsTag = document.getElementById("FPS");
 		fpsNode = document.createTextNode("");
@@ -1333,25 +1334,25 @@
 			items[0].remove(1);
 		}
 	}
-	
-	
+
+
 	$(document).ready(function(){
         $(".slide-up-down").click(function(){
         	if($(".slide-up-down")[0].attributes["open"] == 1)
         	{
             	$(".slide-up-down")[0].attributes["open"] = 0;
-                $(".slide-up-down").addClass('open');            	
+                $(".slide-up-down").addClass('open');
             	$(".controls").slideDown();
         	}
         	else
         	{
-            	$(".slide-up-down")[0].attributes["open"] = 1;      
-                $(".slide-up-down").removeClass('open');            	
-            	$(".controls").slideUp();        		
+            	$(".slide-up-down")[0].attributes["open"] = 1;
+                $(".slide-up-down").removeClass('open');
+            	$(".controls").slideUp();
         	}
         });
-    });	
-	
+    });
+
 </script>
 
 <style>
@@ -1385,7 +1386,7 @@
 .margin-5 {
 	margin: 5px;
 }
-    
+
 .slide-up-down {
 	border-radius: 0 0 8px 8px;
 	padding: 5px 10px;
@@ -1465,7 +1466,7 @@ input[type="number"], select{
                         <button style="display:inline" name="next-colormap-btn-force" onclick="gotoNextForceColormap()">></button>
                     </div>
                     <div class="flex-row">
-                        <button style="display:inline" name="prev-colormap-btn-potential" onclick="gotoPrevEqiPotentialColormap()"><</button>                        
+                        <button style="display:inline" name="prev-colormap-btn-potential" onclick="gotoPrevEqiPotentialColormap()"><</button>
 					   <select name="eqiPotentialSelectColorMap" id="eqiPotentialColorMaps" style="width: 300px" onchange="onEqiPotentialsColorMapChange(this)"></select>
                         <button style="display:inline" name="next-colormap-btn-potential"  onclick="gotoNextEqiPotentialColormap()">></button>
                     </div>
@@ -1496,7 +1497,7 @@ input[type="number"], select{
 							<select name="velocitiesarrows" id="velocitiesarrows" style="width: 300px">
 								<option value="none">None</option>
 								<option value="own">Own</option>
-								<option value="all">All</option>								
+								<option value="all">All</option>
 							</select>
 						</div>
 						<div class="flex-row space-between">
@@ -1504,31 +1505,31 @@ input[type="number"], select{
 							<select name="electricarrows" id="electricarrows" style="width: 300px">
 								<option value="none">None</option>
 								<option value="own">Own</option>
-								<option value="all">All</option>															
-							</select>							
+								<option value="all">All</option>
+							</select>
 						</div>
 						<div class="flex-row space-between">
 							<div class="margin-5">Magnetic arrows:</div>
 							<select name="magneticarrows" id="magneticarrows" style="width: 300px">
 								<option value="none">None</option>
 								<option value="own">Own</option>
-								<option value="all">All</option>															
-							</select>							
-												
+								<option value="all">All</option>
+							</select>
+
 						</div>
 					</div>
-					
+
 					<div>
 						<div class="flex-row flex-end">
 							<div class="margin-5" id="showPredictionLabel">Show prediction:</div>
 							<select name="showPrediction" id="showPrediction" style="width: 300px">
 								<option value="none">None</option>
 								<option value="own">Own</option>
-								<option value="all">All</option>															
-							</select>							
+								<option value="all">All</option>
+							</select>
 						</div>
 						<div class="flex-row">
-							<div class="margin-5" id="useLocalLabel">Use local:</div>						
+							<div class="margin-5" id="useLocalLabel">Use local:</div>
 							<input type="checkbox" name="useLocal" id="useLocal" onclick="onChangeUseLocal()" />
 						</div>
 					</div>
