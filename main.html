@@ -690,16 +690,12 @@ body {
 		});
 		
 		waitingGrid.onDblClick.subscribe(function(e) {	
-			var selectrow = waitingGrid.getSelectedRows();									
-			var selectedIP = waitingGrid.getDataItem(selectrow).IP;
-			var selectedPort = waitingGrid.getDataItem(selectrow).Port;						
-            const play_url = "viewGame?roomMode=play&roomIP=" + selectedIP + "&roomPort=" + selectedPort + "&webRTCGameId=-1";
-			window.frames[0].location.href = play_url;
-            
+            playSelectedGame();
 			//const url="http://" + serverIP + ":8080/?btnGame=PLAY&selectedIP=" + selectedIP + "&selectedPort=" + selectedPort;            
 			//location.replace(url);			
 		});
-	})
+                      
+	})    
 			
 	var rtcGrid;
 	var rtcColumns = [ {
@@ -766,6 +762,14 @@ body {
 <script>
 	var currentXmlGame = ""; 
 
+    function playSelectedGame() {
+        var selectrow = waitingGrid.getSelectedRows();									
+        var selectedIP = waitingGrid.getDataItem(selectrow).IP;
+        var selectedPort = waitingGrid.getDataItem(selectrow).Port;						
+        const play_url = "viewGame?roomMode=play&roomIP=" + selectedIP + "&roomPort=" + selectedPort + "&webRTCGameId=-1";
+        window.frames[0].location.href = play_url;            
+    }
+    
 	function requestNewRTCGame() {
 		var selectedIndex = document.getElementById('selectRTCgame').selectedIndex;
 		var gameName = document.getElementById('selectRTCgame')[selectedIndex].text;
@@ -882,15 +886,13 @@ body {
 
 	<div class="container">
 		<div class="left-col">
-			<form class="form" name="SelectedForm" method="get">
-				<p>GAMES</p>
-				<button class="play_btn" id="play_btn" type="submit" name="btnGame"
-					value="PLAY" disabled>PLAY SELECTED</button>
-				<button class="view_btn" id="view_btn" type="submit" name="btnGame"
-					value="VIEW" disabled>VIEW SELECTED</button>
-				<input type="text" name="selectedIP" id="selectedIP" value=""></input>
-				<input type="text" name="selectedPort" id="selectedPort" value=""></input>
-			</form>
+            
+			<div class="flex-row">
+				<label>IP: <input type="text" name="selectedIP" id="selectedIP" value="" readonly="True"></label>
+				<label>Port: <input type="text" name="selectedPort" id="selectedPort" value="" readonly="True"></label>
+				<button type="button" name="play_btn" id="play_btn" disabled onclick="playSelectedGame()">PLAY SELECTED</button>
+				<button type="button" name="view_btn" id="view_btn" disabled onclick="viewSelectedGame()">VIEW SELECTED</button>        
+			</div>
 
 
 				<div class="flex-row">
@@ -898,7 +900,7 @@ body {
 						<div>Waiting games:</div>
 						<div id="WaitingGrid" style="width: 400px; height: 200px;"></div>
 
-						
+						<!-- it works?
 							<div class="flex-row">						
 								<div>RTC games:</div>
 								<button type="button" name="RequestWebRTC" id="RequestWebRTC" onclick="requestNewRTCGame()">Request WebRTC Game</button>								
@@ -927,17 +929,11 @@ body {
 							<div class="flex-row">
 								<div id="rtcGrid" style="width: 400px; height: 200px;"></div>
 							</div>												
-						
+						-->
 					</div>
 				</div>
 		</div>	
 
-<!-- 
-			<form class="form" method="post">			
-				<button type="btn" type="submit" name="submit" value="NEWGAME">NEW GAME</button>
-			</form>
--->			
-			
 			<frameset>
 				<iframe id="previewFrame" width=1000 height=800>
 				</iframe>
