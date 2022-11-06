@@ -1341,14 +1341,16 @@
         	if($(".slide-up-down")[0].attributes["open"] == 1)
         	{
             	$(".slide-up-down")[0].attributes["open"] = 0;
-                $(".slide-up-down").addClass('open');
-            	$(".controls").slideDown();
+                $(".slide-up-down").addClass('open');            	
+            	//$(".controls").slideDown();
+                $(".controls").slideToggle();
         	}
         	else
         	{
-            	$(".slide-up-down")[0].attributes["open"] = 1;
-                $(".slide-up-down").removeClass('open');
-            	$(".controls").slideUp();
+            	$(".slide-up-down")[0].attributes["open"] = 1;      
+                $(".slide-up-down").removeClass('open');            	
+            	//$(".controls").slideUp();        		
+                $(".controls").slideToggle();
         	}
         });
     });
