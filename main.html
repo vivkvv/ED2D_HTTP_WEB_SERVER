@@ -11,7 +11,12 @@
    text-align: center;
 }
 
-body {
+html, body {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
 	margin: 0;
 	padding: 0;
     display: flex;
@@ -761,6 +766,43 @@ body {
 
 <script>
 	var currentXmlGame = ""; 
+    
+    function maximizeView() {
+        element = document.getElementById("left-col-element")
+        if (element) {
+            if (element.style.display == "none") {
+                element.style.display = "block";
+            }
+            else {
+                element.style.display = "none";
+            }
+        }
+    }
+    
+    function fitView() {
+        previewFrame = document.getElementById("previewFrame");
+        if (!previewFrame)
+            return;
+        
+        inner_wnd = previewFrame.contentDocument.getElementById("view-inner-window");
+        if (!inner_wnd)
+            return;
+        
+        overlay_wnd = previewFrame.contentDocument.getElementById("overlay");
+        overlay_wnd.style.display = "none"
+        
+        inner_wnd.style.width = 400
+        inner_wnd.style.height = 400
+        
+        canvas_wnd = previewFrame.contentDocument.getElementById("Electrodynamics2D-canvas");
+        if (!canvas_wnd)
+            return;
+        
+        canvas_wnd.style.width = "100%"
+        canvas_wnd.style.height = "100%"
+
+        
+    }
 
     function playSelectedGame() {
         var selectrow = waitingGrid.getSelectedRows();									
@@ -885,7 +927,7 @@ body {
 	</div>
 
 	<div class="container">
-		<div class="left-col">
+		<div class="left-col" id="left-col-element" display="block">
             
 			<div class="flex-row">
 				<label>IP: <input type="text" name="selectedIP" id="selectedIP" value="" readonly="True"></label>
@@ -935,7 +977,7 @@ body {
 		</div>	
 
 			<frameset>
-				<iframe id="previewFrame" width=1000 height=800>
+				<iframe id="previewFrame" width="100%" height="100%">
 				</iframe>
 			</frameset>
 
@@ -948,8 +990,8 @@ body {
 
     <div class="topnav flex-row space-between">
         <div class="menu-right">
-            <a class="max_btn">MAX</a>
-            <a class="fit_btn">FIT</a>
+            <a class="max_btn" name="max_btn" id="max_btn" onclick="maximizeView()">MAX</a>
+            <a class="fit_btn" name="fit_btn" id="fit-btn" onclick="fitView()">FIT</a>
         </div>
     </div>
 
