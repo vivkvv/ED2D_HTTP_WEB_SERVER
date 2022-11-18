@@ -1451,7 +1451,7 @@ input[type="number"], select{
 </head>
 
 <body onload="play(), fillDefaultColormaps()">
-  <div class="container flex-col">
+  <div class="container flex-col" id="full-container-id">
 	<div style="display: block; padding: 0px; border: 1px solid black; margin: 0 auto;" id="view-inner-window">
 	 	<div class="slide-wrapper" style="text-align: center; width: 100%;">
 	    	<button type="button" class="slide-up-down" open="1" style="display:inline">Slide Up Down<span class="glyphicon-arrow-down"></span></button>
@@ -1539,7 +1539,7 @@ input[type="number"], select{
 			</div>
 		</div>
 
-		<canvas id="Electrodynamics2D-canvas" style="border: 1px solid black; margin: 10px 0;" width="1500" height="800"></canvas>
+		<canvas id="Electrodynamics2D-canvas" style="border: 1px solid black; margin: 10px 0;" width="100%" height="100%"></canvas>
 	</div>
 	<div id="overlay">
 		<div>
