@@ -172,6 +172,47 @@
 
 <script type="text/javascript">
 
+    
+    function viewInfo() {    
+        overlay_wnd = document.getElementById("overlay");
+        if(overlay_wnd) {
+            if (overlay_wnd.style.display == "none") {
+                overlay_wnd.style.display = "block"
+            }
+            else {
+                overlay_wnd.style.display = "none"
+            }
+        }
+    }
+    
+    function maximizeView() {
+        element = parent.document.getElementById("left-col-element")
+        if (element) {
+            if (element.style.display == "none") {
+                element.style.display = "block";
+            }
+            else {
+                element.style.display = "none";
+            }
+        }
+    }   
+    
+    function resizeEdCanvas() {            
+        canvas_wnd = document.getElementById("Electrodynamics2D-canvas");
+        if (!canvas_wnd)
+            return;
+        
+        slider = document.getElementById("edCanvas-slider")
+        if (!slider)
+            return;
+        
+        
+        
+        canvas_wnd.style.width = geometryWidth * slider.value / 100.0
+        canvas_wnd.style.height = geometryHeight * slider.value / 100.0
+    }
+    
+    
 
     function gotoPrevForceColormap(){
         element = document.getElementById('forcesColormaps');
@@ -1451,10 +1492,16 @@ input[type="number"], select{
 </head>
 
 <body onload="play(), fillDefaultColormaps()">
+    <div class="flex-row">
+  <div class="container flex-col" id="options-container-id">
+    <a class="max_btn" name="max_btn" id="max_btn" onclick="maximizeView()">MAX</a>
+    <a class="info_btn" name="info-btn" id="info-btn" onclick="viewInfo()">INFO</a>
+    <a class="slidecontainer"><input type="range" min="1" max="200" value="100" class="slider" id="edCanvas-slider" oninput="resizeEdCanvas()"></a>
+  </div>
   <div class="container flex-col" id="full-container-id">
 	<div style="display: block; padding: 0px; border: 1px solid black; margin: 0 auto;" id="view-inner-window">
 	 	<div class="slide-wrapper" style="text-align: center; width: 100%;">
-	    	<button type="button" class="slide-up-down" open="1" style="display:inline">Slide Up Down<span class="glyphicon-arrow-down"></span></button>
+	    	<button type="button" class="slide-up-down" open="1" style="display:inline">Show/Hide Options<span class="glyphicon-arrow-down"></span></button>
 	    </div>
 		<div class="controls" style="display:block">
 			<div class="flex-row">
@@ -1559,6 +1606,7 @@ input[type="number"], select{
 		</div>
 	</div>
   </div>
+        </div>
 </body>
 
 </html>

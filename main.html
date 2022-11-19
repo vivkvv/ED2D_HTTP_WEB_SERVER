@@ -766,83 +766,7 @@ html, body {
 
 <script>
 	var currentXmlGame = ""; 
-    
-    function maximizeView() {
-        element = document.getElementById("left-col-element")
-        if (element) {
-            if (element.style.display == "none") {
-                element.style.display = "block";
-            }
-            else {
-                element.style.display = "none";
-            }
-        }
-    }
-    
-    function resizeEdCanvas() {
-        previewFrame = document.getElementById("previewFrame");
-        if (!previewFrame)
-            return;
-        
-        /*
-        full_container = previewFrame.contentDocument.getElementById("full-container-id")
-        if (full_container) {
-            full_container.style.width = "100%"
-            full_container.style.height = "100%"
-        }
-        */
-                
-        inner_wnd = previewFrame.contentDocument.getElementById("view-inner-window");
-        
-        inner_wnd = previewFrame.contentDocument.getElementById("view-inner-window");
-        if (!inner_wnd)
-            return;
             
-        canvas_wnd = previewFrame.contentDocument.getElementById("Electrodynamics2D-canvas");
-        if (!canvas_wnd)
-            return;
-        
-        slider = document.getElementById("edCanvas-slider")
-
-        if (!slider)
-            return;
-        
-        canvas_wnd.style.width = slider.value + "%"
-        canvas_wnd.style.height = slider.value + "%"
-    }
-    
-    function overlayView() {
-        previewFrame = document.getElementById("previewFrame");
-        if (!previewFrame)
-            return;
-        
-        inner_wnd = previewFrame.contentDocument.getElementById("view-inner-window");
-        if (!inner_wnd)
-            return;
-        
-        overlay_wnd = previewFrame.contentDocument.getElementById("overlay");
-        if(overlay_wnd) {
-            if (overlay_wnd.style.display == "none") {
-                overlay_wnd.style.display = "block"
-            }
-            else {
-                overlay_wnd.style.display = "none"
-            }
-        }
-        /*
-        inner_wnd.style.width = "100%"
-        inner_wnd.style.height = "100%"
-        
-        canvas_wnd = previewFrame.contentDocument.getElementById("Electrodynamics2D-canvas");
-        if (!canvas_wnd)
-            return;
-        
-        canvas_wnd.style.width = "50%"
-        canvas_wnd.style.height = "50%"
-        */
-        
-    }
-
     function playSelectedGame() {
         var selectrow = waitingGrid.getSelectedRows();									
         var selectedIP = waitingGrid.getDataItem(selectrow).IP;
@@ -1029,10 +953,7 @@ html, body {
 
     <div class="topnav flex-row space-between">
         <div class="menu-right">
-            <a class="max_btn" name="max_btn" id="max_btn" onclick="maximizeView()">MAX</a>
-            <a class="overlay_btn" name="overlay_btn" id="overlay-btn" onclick="overlayView()">INFO</a>
-            <a class="slidecontainer">
-                <input type="range" min="1" max="100" value="50" class="slider" id="edCanvas-slider" oninput="resizeEdCanvas()"></a>
+            <a class="foother" name="foother-btn" id="foother-btn">FOOTHER</a>            
         </div>
     </div>
 

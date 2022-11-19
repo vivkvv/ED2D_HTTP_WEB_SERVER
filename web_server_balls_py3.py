@@ -1,4 +1,8 @@
-from copyreg import dispatch_table
+""" This is the main module for flying balls ()electrodynamics 1.5d application """
+
+#from copyreg import dispatch_table
+import os.path
+
 from flask import (
     Flask,
     request
@@ -6,8 +10,6 @@ from flask import (
 
 import jinja2
 from jinja2 import meta
-
-import os.path
 
 template_env = jinja2.Environment(
     loader=jinja2.FileSystemLoader(os.getcwd()))
@@ -18,6 +20,7 @@ app = Flask(__name__)
 
 @app.before_request
 def before_all_requests():
+    """ to check all input requests """
     print(request)
 
 # TODO: It does not work
@@ -25,12 +28,15 @@ def before_all_requests():
 # Fix it!
 @app.route('/dispatcher', methods=['GET'])
 def set_ip_of_rooms_dispacher(vmIP):
-    vm_ip = request.args.get('vmIP')
-    pass
+    """ it does not work """
+    vm_ip_address = request.args.get('vmIP')
+
 
 @app.route('/viewGame', methods=['GET', 'POST'])
 def get_view_game():
-    view_var = __get_variables('view.html')
+    """ returns view.html with filled parameters """\
+    """ view.html is the filling of a frame inside main.html """
+    #view_var = __get_variables('view.html')
     template = template_env.get_template('view.html')
     data = {
         'roomMode': request.args['roomMode'],
@@ -43,29 +49,33 @@ def get_view_game():
 
 @app.route('/static/colormaps/colormaps.txt', methods=['GET', 'POST'])
 def get_possible_colormaps():
+    """ returns the list of possible colormaps """
     template = template_env.get_template('/static/colormaps/colormaps.txt')
     out_html = template.render()
     return out_html
 
 @app.route('/static/colormaps/<path:path>', methods=['GET', 'POST'])
 def get_colormap(path):
+    """ returns colormap by path """
     template = template_env.get_template('/static/colormaps/' + path)
     out_html = template.render()
     return out_html
 
 @app.route('/static/games/games.txt', methods=['GET', 'POST'])
 def get_possible_games():
+    """ returns posible games """
     template = template_env.get_template('/static/games/games.txt')
     out_html = template.render()
     return out_html
 
 @app.route('/', methods=['GET', 'POST'])
 def get_main_page():
+    """ returns main.html with filled parameters """
     global DISPATCHER_IP
     vm_ip = request.args.get('vmIP')
-    if(vm_ip == "vm"):
+    if vm_ip == "vm":
         DISPATCHER_IP = request.remote_addr
-    elif(vm_ip is None):
+    elif vm_ip is None:
         main_html_var = __get_variables('main.html')
         template = template_env.get_template('main.html')
         data = {list(main_html_var)[0]: DISPATCHER_IP}
