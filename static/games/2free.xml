@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RoomParameters>
+ <version>1.0</version>
+ <Description>2free with center</Description>
+ <Geometry>
+   <Width>800</Width>
+   <Height>600</Height>
+ </Geometry>
+ <Show>
+ 	<Forces>
+		<PaletteType>discrete</PaletteType>
+		<PaletteName>5-section-muted-autumn_4</PaletteName>
+	</Forces>
+	<EqPotentials>
+		<PaletteType>discrete</PaletteType>
+		<PaletteName>blue-orange-div_9</PaletteName>
+	</EqPotentials>
+ </Show>
+<StaticCharges>
+	<StaticCharge>
+		<x>400</x>
+		<y>300</y>
+		<z>0</z>
+		<q>1</q>
+	</StaticCharge>
+</StaticCharges>>
+ <Players>
+	<count>2</count>
+ </Players>
+</RoomParameters>
